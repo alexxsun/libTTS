@@ -23,6 +23,14 @@ TARGET_LINK_LIBRARIES(xx_tts libUSAGE)
 message(STATUS "tts done")
 
 # --- pybind11 ---
+# This part will only be activated when building the Python package.
+# option(BUILD_PYTHON_BINDINGS "Build Python bindings" OFF)
+# if(BUILD_PYTHON_BINDINGS)
+#     message(STATUS "Building Python bindings...")
+# else()
+#     message(STATUS "Skipping Python bindings build.")
+# endif()
+
 set (PYTHON_EXECUTABLE "/home/alex/.pyenv/shims/python")
 # Position Independent Code (PIC)
 set_target_properties(libIASTAR PROPERTIES POSITION_INDEPENDENT_CODE ON)
@@ -36,12 +44,12 @@ find_package(pybind11 REQUIRED)
 
 # --- Python Bindings ---
 # pybind11_add_module will create a Python extension module
-pybind11_add_module(xx_tts_py             # CMake target name for the module
+pybind11_add_module(libtts_py             # CMake target name for the module
                     SHARED                # Build as a shared library for Python to import
-                    bindings.cpp          # The binding code
+                    bindings/bindings.cpp # The binding code
 )
 
 # Link your C++ library to the bindings
-target_link_libraries(xx_tts_py PRIVATE libProjects)
+target_link_libraries(libtts_py PRIVATE libProjects)
 
 message(STATUS "pybinding done")

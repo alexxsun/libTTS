@@ -5,8 +5,8 @@
 
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h> // For automatic conversion of std::string, std::vector, etc.
-#include "source/projects/xx_tts.h"      // TLS segmentation
-#include "source/projects/als_seg.h"  // ALS segmentation
+#include "../source/projects/xx_tts.h"      // TLS segmentation
+#include "../source/projects/als_seg.h"  // ALS segmentation
 
 namespace py = pybind11;
 
@@ -22,18 +22,19 @@ std::pair<int, std::string> alpha_shape_generation_py(const std::string &infile,
 }
 
 PYBIND11_MODULE(xx_tts_py, m) {
-    // "xx_tts_py" will be the name of the Python module
+    // Python module name: xx_tts_py
     m.doc() = "Python bindings for the xx_tts C++ library"; // Optional module docstring
 
     // TLS: int alpha_shape_generation(const string &infile, const double &alpha_sq_value, string &outfile);
     m.def("alpha_shape_generation",
           &alpha_shape_generation_py,
-          "Generates alpha shape. Returns a tuple (status_code, output_filename).",
+          "Generates 3D alpha shape. Returns a tuple (status_code, output_filename).",
           py::arg("infile"),
           py::arg("alpha_sq_value")
     );
 
     // TLS: int wood_leaf_separation(const string &infile, const double &th_knn_distance = 0.02, string outfile = "");
+    // todo: update the function ==> TLS: over-segmentation
     m.def("wood_leaf_separation",
           &wood_leaf_separation,
           "Performs wood-leaf separation.",
@@ -42,7 +43,20 @@ PYBIND11_MODULE(xx_tts_py, m) {
           py::arg("outfile") = "" // Expose default value to Python
     );
 
-    // ALS segmentation
+    // TLS: int extract_single_trees(const string &vg_mesh_file, const string &loc_file, string &outfile,
+    //                     const double &th_p2trunk_distance = 0.2,
+    //                     const double &th_search_radius = 0.25);
+    m.def("extract_single_trees",
+          &extract_single_trees,
+          "Segments vegetation points into individual tree point clouds.",
+          py::arg("vg_mesh_file"),
+          py::arg("loc_file"),
+          py::arg("outfile"),
+          py::arg("th_p2trunk_distance") = 0.2,
+          py::arg("th_search_radius") = 0.25
+    );
+
+    // ALS: segmentation
     m.def("als_segment",
           &als_segment,
           "Segments ALS data into tree clusters based on persistence values.",
