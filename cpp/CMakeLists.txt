@@ -20,6 +20,7 @@ add_executable(xx_tts "source/tts_test_main.cpp")
 TARGET_LINK_LIBRARIES(xx_tts libFORMAN)
 TARGET_LINK_LIBRARIES(xx_tts libProjects)
 TARGET_LINK_LIBRARIES(xx_tts libUSAGE)
+TARGET_LINK_LIBRARIES(xx_tts libIOSUPPORT)
 message(STATUS "tts done")
 
 # --- pybind11 ---
@@ -38,6 +39,7 @@ set_target_properties(libFORMAN PROPERTIES POSITION_INDEPENDENT_CODE ON)
 set_target_properties(libANN PROPERTIES POSITION_INDEPENDENT_CODE ON)
 set_target_properties(libProjects PROPERTIES POSITION_INDEPENDENT_CODE ON)
 set_target_properties(libUSAGE PROPERTIES POSITION_INDEPENDENT_CODE ON)
+set_target_properties(libIOSUPPORT PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
 # Find pybind11.
 find_package(pybind11 REQUIRED)

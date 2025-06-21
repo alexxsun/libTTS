@@ -9,5 +9,6 @@ target_link_libraries(libProjects CGAL::CGAL)
 TARGET_LINK_LIBRARIES(libProjects libFORMAN)
 TARGET_LINK_LIBRARIES(libProjects libUSAGE)
 TARGET_LINK_LIBRARIES(libProjects libANN)
+TARGET_LINK_LIBRARIES(libProjects libIOSUPPORT)
 
 message(STATUS "Projects ends") #

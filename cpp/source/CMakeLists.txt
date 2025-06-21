@@ -5,5 +5,6 @@ add_subdirectory(forman) # core computation parts: Forman vpath, critical cells,
 add_subdirectory(projects) # applications
 add_subdirectory(usage)
 add_subdirectory(ANN)
+add_subdirectory(io_support)
 
 #add_subdirectory(cgal_as)

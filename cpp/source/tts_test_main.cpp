@@ -1,6 +1,7 @@
 #include <iostream>
 
 #include "projects/xx_tts.h"
+#include "projects/als_seg.h"
 
 using namespace std;
 
@@ -30,6 +31,12 @@ int test_tree_extraction(const string &vg_meshfile, const string &trunk_file,
     cout << "th_search_radius=" << th_search_radius << "\n";
     string outfile;
     return extract_single_trees(vg_meshfile, trunk_file, outfile, th_p2trunk_distance, th_search_radius);
+}
+
+int test_als_segment(const string &infile, double th_radius, double th_forest_pers, double th_height, bool th_height_funtype,
+            double th_pers_H, double th_pers_I, const string &ds){
+    return als_segment(infile, th_radius, th_forest_pers, th_height, th_height_funtype,
+            th_pers_H, th_pers_I, ds);
 }
 
 int main(int argc, char *argv[]) {
@@ -65,6 +72,44 @@ int main(int argc, char *argv[]) {
             th_search_radius = stod(argv[4]);
         }
         test_tree_extraction(infile, trunk_file, th_p2trunk_distance, th_search_radius);
+    }
+
+    if (last == "-als") {
+        string infile = argv[1]; // .pts file
+        double th_radius = -1; // <0 auto-set. unit: m. default auto-set
+        double th_forest_pers = 0.02; // <0 auto-set [0,1] default: 0.02.
+        double th_height = 0.5; // <0 auto-set [0,1] default 0.5.
+        bool th_height_funtype = true; // b: true (bottom up, height function), t: false, otherwise: false
+        double th_pers_H = 0.01; // persistence values for cluster segmentation.
+        double th_pers_I = 0.7; // persistence values for cluster segmentation.
+        string ds = "none"; // how to post-process based on single tree pts numbers
+
+        if (argc > 2) {
+            th_radius = stod(argv[2]);
+        }
+        if (argc > 3) {
+            th_forest_pers = stod(argv[3]);
+        }
+        if (argc > 4) {
+            th_height = stod(argv[4]);
+        }
+        if (argc > 5) {
+            string height_type = argv[5];
+            th_height_funtype = height_type == "false";
+        }
+        if (argc > 6) {
+            th_pers_H = stod(argv[6]);
+        }
+        if (argc > 7) {
+            th_pers_I = stod(argv[7]);
+        }
+        if (argc > 8) {
+            ds = argv[8];
+        }
+
+        test_als_segment(infile, th_radius, th_forest_pers, th_height, th_height_funtype,
+                         th_pers_H, th_pers_I, ds);
+
     }
 
     return 0;

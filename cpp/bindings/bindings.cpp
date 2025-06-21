@@ -33,14 +33,12 @@ PYBIND11_MODULE(xx_tts_py, m) {
           py::arg("alpha_sq_value")
     );
 
-    // TLS: int wood_leaf_separation(const string &infile, const double &th_knn_distance = 0.02, string outfile = "");
+    // TLS: int get_oversegments(const string &infile);
     // todo: update the function ==> TLS: over-segmentation
-    m.def("wood_leaf_separation",
-          &wood_leaf_separation,
-          "Performs wood-leaf separation.",
-          py::arg("infile"),
-          py::arg("th_knn_distance") = 0.02, // Expose default value to Python
-          py::arg("outfile") = "" // Expose default value to Python
+    m.def("get_oversegments",
+          &get_oversegments,
+          "Performs over-segmentation.",
+          py::arg("infile")
     );
 
     // TLS: int extract_single_trees(const string &vg_mesh_file, const string &loc_file, string &outfile,

@@ -23,7 +23,6 @@
 #include <cmath>    /* sqrt */
 #include <cstdlib>  // realpath
 #include <fstream>
-#include <iomanip>  // setprecision
 #include <iomanip>  // std::setprecision
 #include <iostream>
 #include <iterator>
@@ -31,16 +30,13 @@
 #include <map>
 #include <set>
 #include <sstream>  // stringstream
-#include <sstream>
 #include <vector>
 
 // todo: try to make a single header file, remove other .h files.
 #include "../usage/xxTimer.h"
 #include "../usage/Usage.h"
 
-// todo: reconsider io support in cgal and entire project
-// refactor the code
-#include "../projects/happly.h"
+#include "../io_support/happly.h"
 
 #include <filesystem>
 

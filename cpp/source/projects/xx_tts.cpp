@@ -78,17 +78,10 @@ int alpha_shape_segment(const string &infile,
     return 1;
 }
 
-int wood_leaf_separation(const string &infile,
-                         const double &th_knn_distance,
-                         const string outfile) {
+int get_oversegments(const string &infile) {
     /*
     * input: alpa shape component alpha shape (i.e., .off) file
     * input parameter:
-    * output: woody pts file
-    * 
-    * forman min over-segmentation, for each segment, calculate pts knn distance
-    * if the distance is smaller than a threshold, consider it as woody
-    * output woody pts file
     */
 
     string workspace = get_directory(infile);
@@ -109,51 +102,7 @@ int wood_leaf_separation(const string &infile,
     cout << "\nover-segmentation total time: " << timer.getElapsedTimeInSec() << " s\n";
 
     return 0;
-    // the following part is not implemented yet
-    // it is in Python code now for testing.
-
-    // todo: make it or do it in TopoSegment
-    // to avoid writing and reading files
-    // or make TopoSegment cluster output data structure on memory
-    // to be accessed by other functions
-
-    // // process each segment
-    // std::vector<std::vector<float> > oversegs = read_xyzl(overseg_file);
-    // for (auto &seg: oversegs) {
-    //     // get knn distance for each point
-    //     for (auto &pt: seg) {
-    //         float pt_knn_distance = 0.0; // todo: get knn distance
-    //         pt.push_back(pt_knn_distance);
-    //     }
-    // }
-    //
-    // // debug: write oversegs with knn distance to .vtk
-    // write_xyzl(oversegs, "oversegs_knn.vtk");
-    //
-    // // filter woody pts
-    // std::vector<std::array<float, 3> > woody_pts;
-    // for (const auto &seg: oversegs) {
-    //     for (const auto &pt: seg) {
-    //         if (pt[4] < th_knn_distance) {
-    //             woody_pts.push_back({pt[0], pt[1], pt[2]});
-    //         }
-    //     }
-    // }
-    //
-    // // write woody pts file
-    // write_xyz(woody_pts, outfile);
-
-
-    return 1;
-}
-
-
-int detect_single_trees(const string &infile, const string &outfile,
-                        std::vector<std::vector<float> > &detected_trunks) {
-    // if outfile is non-empty, write the results
-    // detected trunk points: list of (x,y,z,l)
-
-    return 0;
+    
 }
 
 int extract_single_trees(const string &vg_mesh_file, const string &loc_file, string &outfile,

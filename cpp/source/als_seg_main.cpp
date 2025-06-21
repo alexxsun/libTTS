@@ -135,7 +135,7 @@ int main(int argc, char **argv) {
 
     //
     cout << "\nProcess data\n";
-    process(pts_file, th_radius, th_forest_pers, th_height, th_height_funtype, th_pers_H, th_pers_I, ds);
+    als_segment(pts_file, th_radius, th_forest_pers, th_height, th_height_funtype, th_pers_H, th_pers_I, ds);
 
     cout << "Done\n";
     return 0;
