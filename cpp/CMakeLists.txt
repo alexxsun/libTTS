@@ -1,64 +1,60 @@
-cmake_minimum_required(VERSION 3.15) # cmake 3.9 has better support for openmp
-message(STATUS "Start running cmake...")
+# A higher version allows for more modern CMake features.
+cmake_minimum_required(VERSION 3.15)
 
-project(TTS CXX)
-enable_language(CXX)
-# C++17 std::filesystem
-# todo: use C++ 20, support string format
-# Set C++17 standard and enable optimization for Release build
+# Define the project name and specify CXX (C++) as the language.
+project(libtts_core LANGUAGES CXX)
+
+# --- Compiler and Build Configuration ---
+# Set the C++ standard to C++17.
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
-message(STATUS "Configuring for Release mode")
-set(CMAKE_BUILD_TYPE Release)
+# Set Position Independent Code (PIC) for all targets.
+# This is required for shared libraries and Python bindings.
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
+# --- Build C++ Libraries ---
 add_subdirectory(source)
 
-# tree segmentation.
-message(STATUS "tts starts...") #
-add_executable(xx_tts "source/tts_test_main.cpp")
-TARGET_LINK_LIBRARIES(xx_tts libFORMAN)
-TARGET_LINK_LIBRARIES(xx_tts libProjects)
-TARGET_LINK_LIBRARIES(xx_tts libUSAGE)
-TARGET_LINK_LIBRARIES(xx_tts libIOSUPPORT)
-message(STATUS "tts done")
+# --- Build Standalone Executable ---
+option(BUILD_EXECUTABLE "Build the standalone C++ executable" ON)
+if(BUILD_EXECUTABLE)
+    message(STATUS "Building standalone executable 'xx_tts'...")
+    add_executable(xx_tts source/tts_test_main.cpp)
 
-# --- pybind11 ---
-# This part will only be activated when building the Python package.
-# option(BUILD_PYTHON_BINDINGS "Build Python bindings" OFF)
-# if(BUILD_PYTHON_BINDINGS)
-#     message(STATUS "Building Python bindings...")
-# else()
-#     message(STATUS "Skipping Python bindings build.")
-# endif()
-
-set (PYTHON_EXECUTABLE "/home/alex/.pyenv/shims/python")
-# Position Independent Code (PIC)
-set_target_properties(libIASTAR PROPERTIES POSITION_INDEPENDENT_CODE ON)
-set_target_properties(libFORMAN PROPERTIES POSITION_INDEPENDENT_CODE ON)
-set_target_properties(libANN PROPERTIES POSITION_INDEPENDENT_CODE ON)
-set_target_properties(libUSAGE PROPERTIES POSITION_INDEPENDENT_CODE ON)
-set_target_properties(libIOSUPPORT PROPERTIES POSITION_INDEPENDENT_CODE ON)
-set_target_properties(libProjects PROPERTIES POSITION_INDEPENDENT_CODE ON)
+    # Link all required libraries.
+    target_link_libraries(xx_tts PRIVATE
+        libFORMAN
+        libProjects
+        libUSAGE
+        libIOSUPPORT
+    )
+endif()
 
 
-# Find pybind11.
-find_package(pybind11 REQUIRED)
+# --- Build Python Bindings (Conditionally) ---
+# This is the main switch controlled by the pyproject.toml.
+option(BUILD_PYTHON_BINDINGS "Build Python bindings" ON)
 
-# --- Python Bindings ---
-# pybind11_add_module will create a Python extension module
-pybind11_add_module(libtts_py             # CMake target name for the module
-                    SHARED                # Build as a shared library for Python to import
-                    bindings/bindings.cpp # The binding code
-)
+if(BUILD_PYTHON_BINDINGS)
+    message(STATUS "Building Python bindings...")
 
-# Link your C++ library to the bindings
-target_link_libraries(libtts_py PRIVATE libProjects)
+    # Find the pybind11 package, which is provided by scikit-build-core.
+    find_package(pybind11 REQUIRED)
 
-## install .so to site-packages folder?
+    # Create the Python extension module named '_libtts'.
+    pybind11_add_module(_libtts
+        SHARED
+        bindings/bindings.cpp
+    )
 
-message(STATUS "pybinding done")
+    # Link the Python module against the necessary C++ libraries.
+    target_link_libraries(_libtts PRIVATE libProjects)
 
-## show some values
+    message(STATUS "Python bindings configuration complete.")
+endif()
+
+## show some values for debugging
 message(STATUS ": ${SKBUILD}")
 message(STATUS "${Python_SITELIB}")

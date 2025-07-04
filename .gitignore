@@ -6,7 +6,6 @@
 /build
 .idea
 
-# User-specific stuff
 # User-specific stuff:
 .idea/**/workspace.xml
 .idea/**/tasks.xml

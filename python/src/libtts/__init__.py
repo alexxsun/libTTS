@@ -4,7 +4,7 @@
 # (e.g., libtts.cpython-311-x86_64-linux-gnu.so) and places it inside this directory.
 # The name of this module is 'libtts' as defined in the CMakeLists.txt.
 # Here, we use a relative import to bring its contents into the package namespace.
-from .libtts_py import alpha_shape_generation, get_oversegments, extract_single_trees, als_segment
+from ._libtts import alpha_shape_generation, get_oversegments, extract_single_trees, als_segment
 
 # Import any high-level Python functions or classes to expose.
 from .simple_ground_dection import normalize_pts, classify_pts
