@@ -1,6 +1,7 @@
 #include "simplicialcomplex.h"
 #include "Timer.h"
-#include "../projects/happly.h"
+#include "../io_support/happly.h"
+// todo: make happly optional based on setting
 // todo: process duplicated points from input
 
 void SimplicialComplex::readOFF(const char *file) {
@@ -170,7 +171,7 @@ void SimplicialComplex::readPLY(const char *file) {
         vertices[i] = Vertex({v[0], v[1], v[2], v[2]});
     }
     forman_timer.stop();
-    cout << "   ply read vertices: " << forman_timer.getElapsedTime() <<" s" << endl;
+    cout << "   ply read vertices: " << forman_timer.getElapsedTime() << " s" << endl;
 
     forman_timer.start();
 
@@ -189,7 +190,7 @@ void SimplicialComplex::readPLY(const char *file) {
         topSimplexeslists[topS.getDimension()]->push_back(topS);
     }
     forman_timer.stop();
-    cout << "   ply read cells: " << forman_timer.getElapsedTime() <<" s" << endl;
+    cout << "   ply read cells: " << forman_timer.getElapsedTime() << " s" << endl;
 
     int dim = 0;
     topSimplexes = vector<vector<TopSimplex> >(topSimplexeslists.size(), vector<TopSimplex>());
@@ -217,7 +218,7 @@ void SimplicialComplex::readPLY(const char *file) {
     buildDataStructure_parallel();
     cout << "Complex built with " << vertices.size() << " vertices and top simplices:" << num_topS << endl;
     forman_timer.stop();
-    cout << "   ply build IA*: " << forman_timer.getElapsedTime() <<" s" << endl;
+    cout << "   ply build IA*: " << forman_timer.getElapsedTime() << " s" << endl;
 
     // debug
     exit(1);

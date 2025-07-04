@@ -28,6 +28,11 @@ cd libtts_project_folder/python
 pip install -e .[dev]
 ```
 
+Uninstall 
+```
+pip uninstall libtts
+```
+
 Usage:
 ```python
 from libtts import xxx

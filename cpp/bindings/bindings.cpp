@@ -21,8 +21,8 @@ std::pair<int, std::string> alpha_shape_generation_py(const std::string &infile,
     return std::make_pair(result, outfile_str);
 }
 
-PYBIND11_MODULE(xx_tts_py, m) {
-    // Python module name: xx_tts_py
+PYBIND11_MODULE(libtts_py, m) {
+    // Python module name: libtts_py
     m.doc() = "Python bindings for the xx_tts C++ library"; // Optional module docstring
 
     // TLS: int alpha_shape_generation(const string &infile, const double &alpha_sq_value, string &outfile);

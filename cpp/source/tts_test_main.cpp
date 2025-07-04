@@ -18,7 +18,7 @@ int test_alpha_shape_generation(const string &infile, const double &alpha_sq_val
 
 int test_wls(const string &infile) {
     std::cout << "\nTest wood-leaf separation. part 1\n\n";
-    return wood_leaf_separation(infile);
+    return get_oversegments(infile);
 }
 
 

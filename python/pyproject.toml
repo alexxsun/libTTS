@@ -8,21 +8,25 @@ build-backend = "scikit_build_core.build"
 name = "libtts"
 version = "0.0.1"
 description = "A library for processing forest point clouds using TDA."
-readme = "../../README.md" # Path to the main README
+readme = "../README.md" # Path to the main README
 requires-python = ">=3.8"  # Minimum Python version required
-packages = ["libtts"]      # Python package name
 
 [tool.scikit-build]
+build.verbose = true
+logging.level = "INFO"
+
+build-dir = "../build/{wheel_tag}"
 # --- Critical Configuration ---
 # Tell scikit-build that the CMake source is one directory up
 cmake.source-dir = "../cpp"
 
 # Pass an option to the CMake command to turn on the bindings
-cmake.args = ["-DBUILD_PYTHON_BINDINGS=ON"]
+# currently set cmake 3.5 todo update cmake
+cmake.args = ["-DBUILD_PYTHON_BINDINGS=ON", "-DCMAKE_POLICY_VERSION_MINIMUM=3.5"]
 
 # Tell scikit-build where the Python source code is
 # (relative to this pyproject.toml file)
 wheel.packages = ["src/libtts"]
 
 # Set the install directory for the compiled C++ module
-install-dir = "src/libtts"
+wheel.install-dir = "src/libtts"

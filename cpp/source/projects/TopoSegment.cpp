@@ -3,7 +3,7 @@
 //
 
 #include "TopoSegment.h"
-#include "../projects/happly.h"
+#include "../io_support/happly.h"
 
 
 void TopoSegment::_get_connected_points(const double &th_h1, const double &th_h2, vector<std::set<int> > &con_pts) {

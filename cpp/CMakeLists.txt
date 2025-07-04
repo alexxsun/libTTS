@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.9) # cmake 3.9 has better support for openmp
+cmake_minimum_required(VERSION 3.15) # cmake 3.9 has better support for openmp
 message(STATUS "Start running cmake...")
 
 project(TTS CXX)
@@ -37,9 +37,10 @@ set (PYTHON_EXECUTABLE "/home/alex/.pyenv/shims/python")
 set_target_properties(libIASTAR PROPERTIES POSITION_INDEPENDENT_CODE ON)
 set_target_properties(libFORMAN PROPERTIES POSITION_INDEPENDENT_CODE ON)
 set_target_properties(libANN PROPERTIES POSITION_INDEPENDENT_CODE ON)
-set_target_properties(libProjects PROPERTIES POSITION_INDEPENDENT_CODE ON)
 set_target_properties(libUSAGE PROPERTIES POSITION_INDEPENDENT_CODE ON)
 set_target_properties(libIOSUPPORT PROPERTIES POSITION_INDEPENDENT_CODE ON)
+set_target_properties(libProjects PROPERTIES POSITION_INDEPENDENT_CODE ON)
+
 
 # Find pybind11.
 find_package(pybind11 REQUIRED)
@@ -54,4 +55,10 @@ pybind11_add_module(libtts_py             # CMake target name for the module
 # Link your C++ library to the bindings
 target_link_libraries(libtts_py PRIVATE libProjects)
 
+## install .so to site-packages folder?
+
 message(STATUS "pybinding done")
+
+## show some values
+message(STATUS ": ${SKBUILD}")
+message(STATUS "${Python_SITELIB}")
