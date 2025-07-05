@@ -84,26 +84,26 @@ int main(int argc, char *argv[]) {
         double th_pers_I = 0.7; // persistence values for cluster segmentation.
         string ds = "none"; // how to post-process based on single tree pts numbers
 
-        if (argc > 2) {
+        if (argc > 3) {
             th_radius = stod(argv[2]);
         }
-        if (argc > 3) {
+        if (argc > 4) {
             th_forest_pers = stod(argv[3]);
         }
-        if (argc > 4) {
+        if (argc > 5) {
             th_height = stod(argv[4]);
         }
-        if (argc > 5) {
+        if (argc > 6) {
             string height_type = argv[5];
             th_height_funtype = height_type == "false";
         }
-        if (argc > 6) {
+        if (argc > 7) {
             th_pers_H = stod(argv[6]);
         }
-        if (argc > 7) {
+        if (argc > 8) {
             th_pers_I = stod(argv[7]);
         }
-        if (argc > 8) {
+        if (argc > 9) {
             ds = argv[8];
         }
 

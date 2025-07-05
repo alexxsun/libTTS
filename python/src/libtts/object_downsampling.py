@@ -15,7 +15,7 @@ for each segment,
 
 cpp_module_available = False
 try:
-    from .libtts import oversegment_tree as _oversegment_tree_cpp
+    from ._libtts import oversegment_tree as _oversegment_tree_cpp
 
 except ImportError:
     # If the import fails, it means the C++ module is not compiled or not found.

@@ -17,12 +17,13 @@ def plot_ground_grid(grid_x, grid_y, grid_z, title):
     plt.show()
     plt.close()
 
+
 # get ground grid
 def get_ground_grid(pts_xyz, grid_size=0.1, show_plot=False):
     # divide points into grid, find the lowest point in each grid, smooth the ground as a plane
-    
-    pts_xyz = np.array(pts_xyz) # ensure numpy array
-    pts_xyz = pts_xyz[:, :3] # (n, 3)
+
+    pts_xyz = np.array(pts_xyz)  # ensure numpy array
+    pts_xyz = pts_xyz[:, :3]  # (n, 3)
 
     # find the bounding box of the points
     min_x = np.min(pts_xyz[:, 0])
@@ -38,21 +39,21 @@ def get_ground_grid(pts_xyz, grid_size=0.1, show_plot=False):
     grid_x = np.arange(min_x, max_x, grid_size)
     grid_y = np.arange(min_y, max_y, grid_size)
     grid_x, grid_y = np.meshgrid(grid_x, grid_y)
-    grid_z = np.full_like(grid_x, np.nan) # default to nan
-    #grid_z_ptsnum = np.zeros_like(grid_x) # number of points in each grid
+    grid_z = np.full_like(grid_x, np.nan)  # default to nan
+    # grid_z_ptsnum = np.zeros_like(grid_x) # number of points in each grid
 
     # update the grid_z by checking each point located in which grid and 
     for p in pts_xyz:
         x, y, z = p
         i = int((x - min_x) / grid_size)
         j = int((y - min_y) / grid_size)
-        #grid_z_ptsnum[j, i] += 1
+        # grid_z_ptsnum[j, i] += 1
         if np.isnan(grid_z[j, i]) or z < grid_z[j, i]:
             grid_z[j, i] = z
     if show_plot:
         plot_ground_grid(grid_x, grid_y, grid_z, "ground grid: initial")
 
-    #remove the outliers (e.g., 1 sigma), especially at the edge
+    # remove the outliers (e.g., 1 sigma), especially at the edge
     grid_nonan = grid_z[~np.isnan(grid_z)]
     mean_z = np.mean(grid_nonan)
     std_z = np.std(grid_nonan)
@@ -72,10 +73,10 @@ def get_ground_grid(pts_xyz, grid_size=0.1, show_plot=False):
         # Get the coordinates of the NaN points
         nan_coords = np.array(np.nonzero(nan_mask)).T
         # Interpolate the NaN values using griddata
-        grid_z[nan_mask] = griddata(valid_coords, valid_values, nan_coords, method='linear') #linear
+        grid_z[nan_mask] = griddata(valid_coords, valid_values, nan_coords, method='linear')  # linear
         # If there are still NaN values (e.g., if they were outside the convex hull of the valid points), you can use nearest-neighbor interpolation as a fallback
         if np.isnan(grid_z).any():
-            #grid_z[nan_mask] = griddata(valid_coords, valid_values, nan_coords, method='nearest')
+            # grid_z[nan_mask] = griddata(valid_coords, valid_values, nan_coords, method='nearest')
             nan_num = len(np.where(np.isnan(grid_z))[0])
             print(f"outside nan #: {nan_num} / {grid_x.shape[0] * grid_x.shape[1]}")
 
@@ -92,6 +93,8 @@ def get_ground_grid(pts_xyz, grid_size=0.1, show_plot=False):
 
 # Interpolation, using LinearNDInterpolator
 from scipy.interpolate import LinearNDInterpolator
+
+
 def normalize_pts(pts_xyz, grid_width, outfile, show_plot=False):
     grid_x, grid_y, grid_z = get_ground_grid(pts_xyz, grid_size=grid_width, show_plot=show_plot)
 
@@ -111,17 +114,17 @@ def normalize_pts(pts_xyz, grid_width, outfile, show_plot=False):
     # grid pts shouldn't be too large, .pts is enough and easy to read
     np.savetxt(grid_outfile, grid_xyz)
     print(f"ground grid saved to {grid_outfile}")
-    
+
     # get ground height from grid
     # grid_x, grid_y are meshgrid
     # grid_z is the height
     # all are numpy 2D array
-    interp = LinearNDInterpolator(grid_xyz[:,0:2], grid_xyz[:,2])
+    interp = LinearNDInterpolator(grid_xyz[:, 0:2], grid_xyz[:, 2])
 
     xs = np.array([p[0] for p in pts_xyz])
     ys = np.array([p[1] for p in pts_xyz])
-    hs = interp(xs,ys)
-    
+    hs = interp(xs, ys)
+
     # xyzh
     out_xyzh = []
     for i in range(len(pts_xyz)):
@@ -139,7 +142,7 @@ def normalize_pts(pts_xyz, grid_width, outfile, show_plot=False):
         # write ply file
         vertex = np.array([tuple(p) for p in out_xyzh], dtype=[('x', 'f4'), ('y', 'f4'), ('z', 'f4'), ('h', 'f4')])
         el = PlyElement.describe(vertex, 'vertex')
-        PlyData([el]).write(outfile) # ouput binary ply file
+        PlyData([el]).write(outfile)  # ouput binary ply file
     else:
         print("output file should be .pts or .ply")
         sys.exit(0)
@@ -148,10 +151,9 @@ def normalize_pts(pts_xyz, grid_width, outfile, show_plot=False):
 
 
 def classify_pts(pts_xyzh, infile, th_h=0.5):
-
-    # veg pts: 
-    veg_pts = [p for p in pts_xyzh if p[3] > th_h] # xyz
-    veg_pts = np.array(veg_pts) # (n, 4)
+    # veg pts:
+    veg_pts = [p for p in pts_xyzh if p[3] > th_h]  # xyz
+    veg_pts = np.array(veg_pts)  # (n, 4)
     if ".pts" in infile:
         # xyzh
         veg_ptsfile = infile.replace(".pts", "_veg.pts")
@@ -189,7 +191,7 @@ def classify_pts(pts_xyzh, infile, th_h=0.5):
         sys.exit(0)
 
     # ground pts
-    gd_pts = [p for p in pts_xyzh if p[3] <= th_h] # xyzh
+    gd_pts = [p for p in pts_xyzh if p[3] <= th_h]  # xyzh
     gd_pts = np.array(gd_pts)
     if ".pts" in infile:
         # xyzh
@@ -213,7 +215,7 @@ def classify_pts(pts_xyzh, infile, th_h=0.5):
         el = PlyElement.describe(vertex, 'vertex')
         PlyData([el]).write(gd_xyh_ptsfile)
         print(f"ground points saved to {gd_xyh_ptsfile}")
-    else:  
+    else:
         print("input file should be .pts or .ply")
         sys.exit(0)
     return
@@ -223,12 +225,12 @@ def normalize_pts_with_gd_grid(pts_xyz, gd_grid, outfile):
     # pts_xyz: (n, 3)
     # gd_grid: (m, 3)
 
-    interp = LinearNDInterpolator(gd_grid[:,0:2], gd_grid[:,2])
+    interp = LinearNDInterpolator(gd_grid[:, 0:2], gd_grid[:, 2])
 
     xs = np.array([p[0] for p in pts_xyz])
     ys = np.array([p[1] for p in pts_xyz])
-    hs = interp(xs,ys)
-    
+    hs = interp(xs, ys)
+
     # xyzh
     out_xyzh = []
     for i in range(len(pts_xyz)):
@@ -246,7 +248,7 @@ def normalize_pts_with_gd_grid(pts_xyz, gd_grid, outfile):
         # write ply file
         vertex = np.array([tuple(p) for p in out_xyzh], dtype=[('x', 'f4'), ('y', 'f4'), ('z', 'f4'), ('h', 'f4')])
         el = PlyElement.describe(vertex, 'vertex')
-        PlyData([el]).write(outfile) # ouput binary ply file
+        PlyData([el]).write(outfile)  # ouput binary ply file
     else:
         print("output file should be .pts or .ply")
         sys.exit(0)
@@ -255,12 +257,13 @@ def normalize_pts_with_gd_grid(pts_xyz, gd_grid, outfile):
 
 
 import sys
-if __name__=="__main__":
+
+if __name__ == "__main__":
 
     if sys.argv[-1] == "-v2":
         print(f"normalize pts with provided ground grid\n")
-        infile = sys.argv[1] # .pts file
-        gdfile = sys.argv[2] # .pts file
+        infile = sys.argv[1]  # .pts file
+        gdfile = sys.argv[2]  # .pts file
 
         pts_xyz = np.loadtxt(infile)
 
@@ -270,7 +273,7 @@ if __name__=="__main__":
             plydata = PlyData.read(gdfile)
             gd_xyz = np.vstack([plydata['vertex']['x'], plydata['vertex']['y'], plydata['vertex']['z']]).T
         else:
-            print("input file should be .pts or .ply")  
+            print("input file should be .pts or .ply")
             sys.exit(0)
 
         outfile = infile.replace(".pts", "_normalized.pts")
@@ -282,9 +285,9 @@ if __name__=="__main__":
         exit(0)
 
     # todo: add argparse, update/merge the code
-    infile = sys.argv[1] # .pts file
-    gd_width = float(sys.argv[2]) # grid width, 0.1m
-    th_veg_h = 0.5 # threshold for classifying ground and vegetation points
+    infile = sys.argv[1]  # .pts file
+    gd_width = float(sys.argv[2])  # grid width, 0.1m
+    th_veg_h = 0.5  # threshold for classifying ground and vegetation points
     if len(sys.argv) > 3:
         th_veg_h = float(sys.argv[3])
 
@@ -302,7 +305,7 @@ if __name__=="__main__":
     else:
         print("input file should be .pts or .ply")
         sys.exit(0)
-    
+
     pts_xyzh = normalize_pts(inpts, gd_width, outfile, show_plot=True)
 
     print("classifying ground and vegetation points")

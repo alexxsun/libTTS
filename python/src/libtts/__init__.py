@@ -24,7 +24,7 @@ __all__ = [
     "alpha_shape_generation",
     "get_oversegments",
     "extract_single_trees",
-    "als_segment",     
+    "als_segment",
     # Exposing the Python functionss
     "normalize_pts",
     "classify_pts",

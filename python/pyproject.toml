@@ -28,5 +28,5 @@ cmake.args = ["-DBUILD_PYTHON_BINDINGS=ON", "-DCMAKE_POLICY_VERSION_MINIMUM=3.5"
 # (relative to this pyproject.toml file)
 wheel.packages = ["src/libtts"]
 
-# Set the install directory for the compiled C++ module
-wheel.install-dir = "src/libtts"
+# site-packages/libtts
+wheel.install-dir = "libtts"

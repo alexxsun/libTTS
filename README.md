@@ -26,6 +26,7 @@ Install in editable mode for development:
 ```
 cd libtts_project_folder/python
 pip install -e .[dev]
+pip install --verbose -e .
 ```
 
 Uninstall 
