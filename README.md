@@ -38,7 +38,7 @@ Usage:
 ```python
 from libtts import xxx
 ```
-More examples are available in the `examples/` directory of the Python package.
+More examples are available in the `some_examples/` directory of the Python package.
 
 
 ### Project Structure
@@ -47,7 +47,7 @@ TOC
 ```
 libtts_project/
 ├── cpp/                     # All C++ code lives here
-│   ├── src/                 # Your core C++ library source files (.cpp, .h)
+│   ├── src/                 # All core C++ library source files (.cpp, .h)
 │   ├── bindings/            # C++ code specifically for Python bindings
 │   │   └── bindings.cpp
 │   └── CMakeLists.txt       # CMake file for building ONLY the C++ part
@@ -62,6 +62,12 @@ libtts_project/
 ├── some_examples/
 |
 └── README.md
+```
+
+After the installation
+in site-packages, the Python package and files will be located at:
+```
+To do later.
 ```
 
 ### Citation

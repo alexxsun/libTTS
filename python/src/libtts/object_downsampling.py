@@ -19,10 +19,12 @@ try:
 
 except ImportError:
     # If the import fails, it means the C++ module is not compiled or not found.
-    print("Error: C++ module 'libtts' not found. Using Python-only implementation.")
+    print("Error @ Downsampling. C++ module 'libtts' not found. Using Python-only implementation.")
 
 # If the import is successful, set the marker to True.
+# local test
 cpp_module_available = True
+#from ._libtts import oversegment_tree as _oversegment_tree_cpp
 
 import sys
 import numpy as np

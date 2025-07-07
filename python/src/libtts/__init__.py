@@ -1,15 +1,17 @@
 # python/src/libtts/__init__.py
 
 # When scikit-build-core compiles the C++ code, it creates a module file
-# (e.g., libtts.cpython-311-x86_64-linux-gnu.so) and places it inside this directory.
-# The name of this module is 'libtts' as defined in the CMakeLists.txt.
-# Here, we use a relative import to bring its contents into the package namespace.
+# (e.g., _libtts.cpython-311-x86_64-linux-gnu.so) 
+# check cpp/cmakelist.txt and python/pyproject.toml to define the module name and install path.
+# (e.g., site-packages/libtts/_libtts.cpython-311-x86_64-linux-gnu.so)
+# This module is imported here to make its functions available in the package namespace.
 from ._libtts import alpha_shape_generation, get_oversegments, extract_single_trees, als_segment
 
 # Import any high-level Python functions or classes to expose.
 from .simple_ground_dection import normalize_pts, classify_pts
 from .simple_tree_detection import detect_trees
 from .object_downsampling import extract_woody_points
+from .label_propagation import label_points_layered_nn, label_points_region_growing#as propagate_labels
 
 # Define the package version in the top-level __init__.py.
 # This allows users to check the version with `libtts.__version__`.
@@ -29,5 +31,7 @@ __all__ = [
     "normalize_pts",
     "classify_pts",
     "detect_trees",
-    "extract_woody_points"
+    "extract_woody_points",
+    "label_points_layered_nn",
+    "label_points_region_growing"
 ]

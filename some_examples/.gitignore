@@ -1,0 +1,8 @@
+# only keep selected files
+# This file is used to ignore all files except those explicitly specified.
+# Ignore everything
+*
+# Except the following files
+!.gitignore
+!basic_example.ipynb
+!close_stems_3.pts

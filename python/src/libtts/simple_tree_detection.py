@@ -39,7 +39,7 @@ def dbscan_clustering(pts_np, th_db_eps=0.1, th_db_min_samples=10, set_2d=False)
     return labels, gpids
 
 
-def detect_trees(pts_file, th_low_base=0.0, th_low_length=0.5, th_avg_knn_dist=0.1, out_file=None):
+def detect_trees(pts_file, th_low_base=0.0, th_low_length=0.5, th_avg_knn_dist=0.1, th_db_eps = 0.02, out_file=None):
     if not os.path.exists(pts_file):
         print(f"check: {pts_file}")
         return None
@@ -49,6 +49,11 @@ def detect_trees(pts_file, th_low_base=0.0, th_low_length=0.5, th_avg_knn_dist=0
     # read ply by plyfile, get xyzh
     if ".pts" in pts_file:
         pts = np.loadtxt(pts_file)
+
+        # if the file has 3 columns, duplicate the z column as h
+        if pts.shape[1] == 3:
+            pts = np.hstack((pts, pts[:, 2:3]))
+
     else:
         # Read the .ply file
         ply_data = PlyData.read(pts_file)
@@ -59,7 +64,7 @@ def detect_trees(pts_file, th_low_base=0.0, th_low_length=0.5, th_avg_knn_dist=0
     print(f"pts #: {len(pts)}")
     print(f"pts shape: {pts.shape}")
     # select low height points from xyzh
-    pts_hmin = 0.5
+    pts_hmin = 0.0
     print(f"pts_hmin: {pts_hmin}")
     # find pts between pts_zmin + th_low_base and pts_zmin + th_low_length
     low_pts = pts[(pts[:, 3] > pts_hmin + th_low_base) & (pts[:, 3] < pts_hmin + th_low_base + th_low_length)]  # xyzh
@@ -98,11 +103,17 @@ def detect_trees(pts_file, th_low_base=0.0, th_low_length=0.5, th_avg_knn_dist=0
     print(f"filtered low pts #: {len(filtered_low_pts)}")
 
     # clustering
-    th_db_eps = 0.02
+    #th_db_eps = 0.02
     th_db_min_samples = 5
 
     labels, gpids = dbscan_clustering(filtered_low_pts, th_db_eps, th_db_min_samples, set_2d=True)
     labels = np.array(labels)
+
+    unique_lbls = set(labels)
+    # remove -1 
+    if -1 in unique_lbls:
+        unique_lbls.remove(-1)
+    print(f"# labels #: {len(unique_lbls)}")
     # 
     labeled_pts = list()
     for i, p in enumerate(filtered_low_pts):
@@ -114,6 +125,8 @@ def detect_trees(pts_file, th_low_base=0.0, th_low_length=0.5, th_avg_knn_dist=0
         labeled_pts.append((x, y, z, h, l))
         # labeled_pts.append((x, y, z-th_low_base, h, l)) # make sure z is low to support TTS-cpp. to check.
     labeled_pts = np.array(labeled_pts)
+
+
 
     # save xyzl
     # aka tree location points v1
@@ -129,5 +142,5 @@ if __name__ == "__main__":
     if len(sys.argv) > 2:
         outfile = sys.argv[2]  # .pts file
 
-    detect_trees(infile, th_low_base=0.5, th_low_length=0.5, th_avg_knn_dist=0.05, out_file=outfile)
+    detect_trees(infile, th_low_base=0.5, th_low_length=0.5, th_avg_knn_dist=0.05, th_db_eps = 0.02, out_file=outfile)
     print("done")
