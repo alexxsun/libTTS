@@ -19,7 +19,7 @@ int alpha_shape_generation(const string &infile, const double &alpha_sq_value, s
 int alpha_shape_segment(const string &infile, const double &alpha_sq_value, string &out_tocfile);
 
 // over-segmentation of alpha shape
-int get_oversegments(const string &infile);
+int get_oversegments(const string &infile, string &out_segfile, string &out_minsfile);
 
 // segment vegetation points to individual tree point clouds
 // input: vegetation pts file, tree location file

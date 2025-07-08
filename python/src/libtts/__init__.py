@@ -5,13 +5,16 @@
 # check cpp/cmakelist.txt and python/pyproject.toml to define the module name and install path.
 # (e.g., site-packages/libtts/_libtts.cpython-311-x86_64-linux-gnu.so)
 # This module is imported here to make its functions available in the package namespace.
-from ._libtts import alpha_shape_generation, get_oversegments, extract_single_trees, als_segment
+from ._libtts import (generate_alpha_shape_cpp as generate_alpha_shape,
+                      get_oversegments_cpp as get_oversegments,
+                      tls_extract_single_trees_cpp as tls_extract_single_trees,
+                      als_segment as als_extract_single_trees)
 
 # Import any high-level Python functions or classes to expose.
 from .simple_ground_dection import normalize_pts, classify_pts
 from .simple_tree_detection import detect_trees
 from .object_downsampling import extract_woody_points, downsample_points
-from .label_propagation import label_points_layered_nn, label_points_region_growing#as propagate_labels
+from .label_propagation import label_points_layered_nn, label_points_region_growing  # as propagate_labels
 
 # Define the package version in the top-level __init__.py.
 # This allows users to check the version with `libtts.__version__`.
@@ -23,10 +26,10 @@ __version__ = "0.0.1"
 # It is good practice to define this.
 __all__ = [
     # Exposing the C++ core functions
-    "alpha_shape_generation",
+    "generate_alpha_shape",
     "get_oversegments",
-    "extract_single_trees",
-    "als_segment",
+    "tls_extract_single_trees",
+    "als_extract_single_trees",
     # Exposing the Python functionss
     "normalize_pts",
     "classify_pts",
@@ -34,5 +37,7 @@ __all__ = [
     "extract_woody_points",
     "downsample_points",
     "label_points_layered_nn",
-    "label_points_region_growing"
+    "label_points_region_growing",
+    # "common",
+    "__version__"
 ]

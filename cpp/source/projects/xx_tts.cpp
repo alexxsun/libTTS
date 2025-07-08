@@ -78,7 +78,7 @@ int alpha_shape_segment(const string &infile,
     return 1;
 }
 
-int get_oversegments(const string &infile) {
+int get_oversegments(const string &infile, string &out_segfile, string &out_minsfile) {
     /*
     * input: alpa shape component alpha shape (i.e., .off) file
     * input parameter:
@@ -94,15 +94,14 @@ int get_oversegments(const string &infile) {
     // get over-segmentation results
     TopoSegment ts(infile, 3, false);
 
-    string overseg_file = ""; // "_lbl.pts" // workspace + "/" + filename + "_oversegs.pts"; // over-segmentation xyzl file
-    string forman_mins_file = ""; //workspace + "/" + filename + "_mins.off"; // forman mins file
-    ts.cluster(overseg_file, forman_mins_file);
+    // out_segfile: xx_lbl.pts
+    // out_minsfile: xx_mins.off"
+    ts.cluster(out_segfile, out_minsfile);
 
     timer.stop();
     cout << "\nover-segmentation total time: " << timer.getElapsedTimeInSec() << " s\n";
 
-    return 0;
-    
+    return 1;
 }
 
 int extract_single_trees(const string &vg_mesh_file, const string &loc_file, string &outfile,

@@ -18,7 +18,8 @@ int test_alpha_shape_generation(const string &infile, const double &alpha_sq_val
 
 int test_wls(const string &infile) {
     std::cout << "\nTest wood-leaf separation. part 1\n\n";
-    return get_oversegments(infile);
+    std::string outfile1, outfile2;
+    return get_oversegments(infile, outfile1, outfile2);
 }
 
 
@@ -33,10 +34,11 @@ int test_tree_extraction(const string &vg_meshfile, const string &trunk_file,
     return extract_single_trees(vg_meshfile, trunk_file, outfile, th_p2trunk_distance, th_search_radius);
 }
 
-int test_als_segment(const string &infile, double th_radius, double th_forest_pers, double th_height, bool th_height_funtype,
-            double th_pers_H, double th_pers_I, const string &ds){
+int test_als_segment(const string &infile, double th_radius, double th_forest_pers, double th_height,
+                     bool th_height_funtype,
+                     double th_pers_H, double th_pers_I, const string &ds) {
     return als_segment(infile, th_radius, th_forest_pers, th_height, th_height_funtype,
-            th_pers_H, th_pers_I, ds);
+                       th_pers_H, th_pers_I, ds);
 }
 
 int main(int argc, char *argv[]) {
@@ -65,7 +67,8 @@ int main(int argc, char *argv[]) {
         string trunk_file = argv[2]; // .pts
         double th_p2trunk_distance = 0.2;
         double th_search_radius = 0.25;
-        if (argc > 4) { // note: -tts is also counted in argc
+        if (argc > 4) {
+            // note: -tts is also counted in argc
             th_p2trunk_distance = stod(argv[3]);
         }
         if (argc > 5) {
@@ -109,7 +112,6 @@ int main(int argc, char *argv[]) {
 
         test_als_segment(infile, th_radius, th_forest_pers, th_height, th_height_funtype,
                          th_pers_H, th_pers_I, ds);
-
     }
 
     return 0;
