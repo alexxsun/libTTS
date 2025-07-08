@@ -94,7 +94,7 @@ int get_oversegments(const string &infile) {
     // get over-segmentation results
     TopoSegment ts(infile, 3, false);
 
-    string overseg_file = ""; // workspace + "/" + filename + "_oversegs.pts"; // over-segmentation xyzl file
+    string overseg_file = ""; // "_lbl.pts" // workspace + "/" + filename + "_oversegs.pts"; // over-segmentation xyzl file
     string forman_mins_file = ""; //workspace + "/" + filename + "_mins.off"; // forman mins file
     ts.cluster(overseg_file, forman_mins_file);
 

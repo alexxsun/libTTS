@@ -10,7 +10,7 @@ from ._libtts import alpha_shape_generation, get_oversegments, extract_single_tr
 # Import any high-level Python functions or classes to expose.
 from .simple_ground_dection import normalize_pts, classify_pts
 from .simple_tree_detection import detect_trees
-from .object_downsampling import extract_woody_points
+from .object_downsampling import extract_woody_points, downsample_points
 from .label_propagation import label_points_layered_nn, label_points_region_growing#as propagate_labels
 
 # Define the package version in the top-level __init__.py.
@@ -32,6 +32,7 @@ __all__ = [
     "classify_pts",
     "detect_trees",
     "extract_woody_points",
+    "downsample_points",
     "label_points_layered_nn",
     "label_points_region_growing"
 ]

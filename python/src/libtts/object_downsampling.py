@@ -13,18 +13,15 @@ for each segment,
 # and set a marker to indicate that the C++ module is not available.
 # some functions may not be available if the C++ module is not compiled.
 
-cpp_module_available = False
+cpp_module_available = True
 try:
-    from ._libtts import oversegment_tree as _oversegment_tree_cpp
+    from ._libtts import get_oversegments as _oversegment_tree_cpp
 
 except ImportError:
     # If the import fails, it means the C++ module is not compiled or not found.
-    print("Error @ Downsampling. C++ module 'libtts' not found. Using Python-only implementation.")
+    print("Error @ Downsampling. C++ module 'libtts' not found. ")
+    cpp_module_available = False
 
-# If the import is successful, set the marker to True.
-# local test
-cpp_module_available = True
-#from ._libtts import oversegment_tree as _oversegment_tree_cpp
 
 import sys
 import numpy as np
@@ -94,12 +91,13 @@ def extract_woody_points(infile, th_avg_dis=0.1):
 def downsample_points(infile, th_avg_dis=0.1):
     # use cpp function to process infile
     if not cpp_module_available:
-        print("C++ module not available, using Python implementation.")
-        extract_woody_points(infile, th_avg_dis)
+        print("C++ module not available")
         return
-    print(f"Using C++ implementation to process {infile} with th_avg_dis: {th_avg_dis}")
+
     # Call the C++ function
-    overseg_file = _oversegment_tree_cpp(infile, th_avg_dis)
+    _oversegment_tree_cpp(infile)
+
+    overseg_file = infile[:-4] + "_lbl.pts"
 
     # then process the overseg_file
     print(f"Oversegmentation results saved to {overseg_file}")
