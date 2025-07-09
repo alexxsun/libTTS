@@ -95,7 +95,7 @@ def downsample_points(infile, th_avg_dis=0.1):
         return
 
     # Call the C++ function
-    _oversegment_tree_cpp(infile)
+    _oversegment_tree_cpp(infile) # infile: mesh file
 
     overseg_file = infile[:-4] + "_lbl.pts"
 
@@ -105,7 +105,7 @@ def downsample_points(infile, th_avg_dis=0.1):
     
 
 if __name__ == "__main__":
-    infile = sys.argv[1]
+    infile = sys.argv[1] # oversegmentation results, xyzl
 
     th_avg_dis = 0.1
     if len(sys.argv) > 2:
