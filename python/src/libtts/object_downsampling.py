@@ -16,6 +16,7 @@ for each segment,
 cpp_module_available = True
 try:
     from ._libtts import get_oversegments_cpp as _oversegment_tree_cpp
+    from ._libtts import generate_alpha_shape_cpp as _alpha_shape_cpp
 
 except ImportError:
     # If the import fails, it means the C++ module is not compiled or not found.
@@ -88,7 +89,7 @@ def extract_woody_points(infile, th_avg_dis=0.1):
     print(f"Done. Saved to {outfl}")
 
 
-def downsample_points(infile, th_avg_dis=0.1):
+def downsample_points_from_mesh(infile, th_avg_dis=0.1):
     # use cpp function to process infile
     if not cpp_module_available:
         print("C++ module not available")
@@ -96,6 +97,25 @@ def downsample_points(infile, th_avg_dis=0.1):
 
     # Call the C++ function
     _oversegment_tree_cpp(infile) # infile: mesh file
+
+    overseg_file = infile[:-4] + "_lbl.pts"
+
+    # then process the overseg_file
+    print(f"Oversegmentation results saved to {overseg_file}")
+    extract_woody_points(overseg_file, th_avg_dis)
+
+def downsample_points(infile, th_alpha_sq = 0.01, th_avg_dis=0.1):
+    # infile: pts file
+    # th_alpha_sq: generate alpha shape, can also remove isolated points
+
+    # use cpp function to process infile
+    if not cpp_module_available:
+        print("C++ module not available")
+        return
+
+    # Call the C++ function
+    as_file = _alpha_shape_cpp(infile, th_alpha_sq)
+    _oversegment_tree_cpp(as_file) # infile: mesh file
 
     overseg_file = infile[:-4] + "_lbl.pts"
 

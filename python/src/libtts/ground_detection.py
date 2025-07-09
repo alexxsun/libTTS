@@ -1,6 +1,6 @@
 """
-Functions for detecting ground points, creating a Digital Terrain Model (DTM),
-and classifying points as ground or vegetation.
+Functions for detecting ground points.
+Current implementation: creating a Digital Terrain Model (DTM), and classifying points as ground or vegetation.
 """
 import argparse
 import numpy as np

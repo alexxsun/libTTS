@@ -1,6 +1,6 @@
 """
-Functions for detecting potential tree locations from a normalized point cloud
-by filtering and clustering points at a low height above the ground.
+Functions for detecting potential tree locations from a normalized point cloud.
+Current implmentation: filtering and clustering points at a low height above the ground.
 """
 import argparse
 import os
