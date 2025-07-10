@@ -3,25 +3,25 @@
 #include "projects/xx_tts.h"
 #include "projects/als_seg.h"
 
+
 using namespace std;
-
-
-int test_alpha_shape_segment(const string &infile, const double &alpha_sq_value, string &out_tocfile) {
-    std::cout << "\nTest alpha shape generation and segmentation\n\n";
-    return alpha_shape_segment(infile, alpha_sq_value, out_tocfile);
-}
 
 int test_alpha_shape_generation(const string &infile, const double &alpha_sq_value, string &outfile) {
     std::cout << "\nTest alpha shape generation ONLY\n\n";
     return alpha_shape_generation(infile, alpha_sq_value, outfile);
 }
 
+int test_alpha_shape_segment(const string &infile, const double &alpha_sq_value, string &out_dir) {
+    std::cout << "\nTest alpha shape generation and segmentation\n\n";
+    return alpha_shape_segment(infile, alpha_sq_value, out_dir);
+}
+
+
 int test_wls(const string &infile) {
     std::cout << "\nTest wood-leaf separation. part 1\n\n";
     std::string outfile1, outfile2;
     return get_oversegments(infile, outfile1, outfile2);
 }
-
 
 int test_tree_extraction(const string &vg_meshfile, const string &trunk_file,
                          const double &th_p2trunk_distance,

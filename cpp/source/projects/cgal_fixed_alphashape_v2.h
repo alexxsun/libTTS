@@ -102,6 +102,11 @@ namespace {
             std::cerr << "Error: Could not open file for writing: " << outfile << std::endl;
             return false;
         }
+        // print summary
+        std::cout << "vertices #:" << vertices.size() << std::endl;
+        std::cout << "tetra #: " << cells.size() << std::endl;
+        std::cout << "triangles #: " << facets.size() << std::endl;
+        std::cout << "edges #: " << edges.size() << std::endl;
 
         ofs << "OFF\n";
         ofs << vertices.size() << " " << (cells.size() + facets.size() + edges.size()) << " 0\n";
@@ -121,7 +126,7 @@ namespace {
             ofs << "2 " << edge[0] << " " << edge[1] << "\n";
         }
 
-        std::cout << "Successfully wrote mesh to " << outfile << std::endl;
+        std::cout << "Successfully wrote mesh to:\n" << outfile.string() << std::endl;
         return true;
     }
 
@@ -166,7 +171,8 @@ namespace {
             plyOut.addFaceIndices(ply_total_faces);
             plyOut.write(outfile.string(), happly::DataFormat::Binary);
 
-            std::cout << "Successfully wrote " << ply_total_faces.size() << " faces to " << outfile << std::endl;
+            std::cout << "Successfully wrote " << ply_total_faces.size() << " faces to\n" << outfile.string() <<
+                    std::endl;
         } catch (const std::exception &e) {
             std::cerr << "Error writing PLY file: " << e.what() << std::endl;
             return false;

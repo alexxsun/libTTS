@@ -4,7 +4,7 @@
 
 
 #include "xx_tts.h"
-#include "cgal_fixed_alphashape.h"
+#include "cgal_fixed_alphashape_v2.h"
 #include "TopoSegment.h"
 #include <filesystem>
 
@@ -29,52 +29,54 @@ string get_filename(const string &in_path) {
 }
 
 int alpha_shape_generation(const string &infile, const double &alpha_sq_value, string &outfile) {
-    string ab_filepath;
-    std::filesystem::path absolutePath = std::filesystem::absolute(infile);
-    ab_filepath = absolutePath.string();
-    cout << "pts file path: " << ab_filepath << endl;
-    cout << "alpha sq: " << alpha_sq_value << endl;
-    // todo: update alpha shape code: better design and update the output file names
-    string out_tocfile = "";
-    std::size_t found2 = ab_filepath.find_last_of('.');
-    // use the absolute path
-    string outdir = ab_filepath.substr(0, found2); //
-    stringstream ss;
-    ss << fixed << setprecision(3) << outdir << "_a" << alpha_sq_value;
-    if (ab_filepath.find(".pts") != string::npos) {
-        ss << ".off";
-    } else if (ab_filepath.find(".ply") != string::npos) {
-        ss << ".ply";
-    } else {
-        cout << "no supported file format\n";
-        return 0;
+    string format = "off";
+    if (infile.find(".ply") != string::npos) {
+        format = "ply";
     }
-    outfile = ss.str();
-    cout << "output as3d: " << outfile << endl;
-    //generate_fixed_alpha_shape(ab_filepath, alpha_sq_value, outfile, 3, out_tocfile);
-    generate_fixed_alpha_shape_only(ab_filepath, alpha_sq_value, outfile);
+    if (outfile.empty()) {
+        std::stringstream ss;
+        ss << std::filesystem::path(infile).stem().string()
+                << "_a" << std::fixed << std::setprecision(3) << alpha_sq_value << "." << format;
+        outfile = (std::filesystem::path(infile).parent_path() / ss.str()).string();
+    }
+    generate_fixed_alpha_shape_only_v2(infile, alpha_sq_value, outfile, format);
+
 
     return 1;
 }
 
 int alpha_shape_segment(const string &infile,
                         const double &alpha_sq_value,
-                        string &out_tocfile) {
-    string ab_filepath;
-    std::filesystem::path absolutePath = std::filesystem::absolute(infile);
-    ab_filepath = absolutePath.string();
-    cout << "pts file path: " << ab_filepath << endl;
-    cout << "alpha sq: " << alpha_sq_value << endl;
-    // if (outfile.empty()) {
-    //     cout << "get components only\n";
-    // } else {
-    //     cout << "generate a complete alpha shape, too.\n";
-    // }
+                        string &outdir) {
+    string format = "off";
+    if (infile.find(".ply") != string::npos) {
+        format = "ply";
+    }
+    std::stringstream ss;
+    ss << std::filesystem::path(infile).stem().string()
+            << "_a" << std::fixed << std::setprecision(3) << alpha_sq_value << "." << format;
+    //string outfile = (std::filesystem::path(infile).parent_path() / ss.str()).string();
+    string outfile = "";
 
-    //string output_as_tocfile;
-    // todo: update alpha shape code: better design and update the output file names
-    generate_fixed_alpha_shape(ab_filepath, alpha_sq_value, "", 3, out_tocfile);
-    std::cout << "out_tocfile: " << out_tocfile << endl;
+    ss.str("");
+    ss.clear();
+    ss << std::filesystem::path(infile).stem().string()
+            << "_a" << std::fixed << std::setprecision(3) << alpha_sq_value << "_components";
+    if (outdir.empty()) {
+        outdir = (std::filesystem::path(infile).parent_path() / ss.str()).string();
+    }
+    //std::cout << "out file: " << outdir << "\n";
+    std::cout << "out dir: " << outdir << "\n";
+    // create outdir
+    std::filesystem::path dir_path(outdir);
+    if (std::filesystem::exists(dir_path)) {
+        std::cout << "Directory '" << dir_path << "' already exists. Removing it." << std::endl;
+        std::filesystem::remove_all(dir_path);
+    }
+    std::cout << "Creating directory '" << dir_path << "'." << std::endl;
+    std::filesystem::create_directories(dir_path);
+
+    generate_fixed_alpha_shape_v2(infile, alpha_sq_value, outfile, outdir, format);
     return 1;
 }
 

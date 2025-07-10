@@ -13,10 +13,7 @@ using namespace std;
 int alpha_shape_generation(const string &infile, const double &alpha_sq_value, string &outfile);
 
 // segment entire points into subregions
-// input: input pts file,
-// input parameter: alpha value
-// output: table of content file (file list file) of subregion pts file
-int alpha_shape_segment(const string &infile, const double &alpha_sq_value, string &out_tocfile);
+int alpha_shape_segment(const string &infile, const double &alpha_sq_value, string &outdir);
 
 // over-segmentation of alpha shape
 int get_oversegments(const string &infile, string &out_segfile, string &out_minsfile);
