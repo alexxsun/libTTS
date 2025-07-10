@@ -2,7 +2,7 @@
 
 **Project Status**
 This project is currently under active development. 
-The API and features may change in the near future.
+The API and features are likely to change frequently, so please check back often for updates.
 
 ### Cpp library
 You can compile the library from source and have the executables `xx_tts` for processing point clouds.
@@ -35,14 +35,11 @@ pip uninstall libtts
 ```
 
 Usage:
-```python
-from libtts import xxx
-```
-More examples are available in the `some_examples/` directory of the Python package.
+Please check examples in the `some_examples/` folder.
 
 
 ### Project Structure
-TOC
+Source code
 
 ```
 libtts_project/
@@ -64,11 +61,7 @@ libtts_project/
 └── README.md
 ```
 
-After the installation
-in site-packages, the Python package and files will be located at:
-```
-To do later.
-```
+After the installation using `pip`,  the package and files will be located at in the Python `site-packages` folder.
 
 ### Citation
 The methods implemented in this library are described in the following publications. 
