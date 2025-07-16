@@ -397,9 +397,9 @@ namespace {
 
 /**
  * @brief Generates a 3D alpha shape and saves it to a single file.
- * @param ptsfile Path to the input point cloud file.
+ * @param ptsfile_str Path to the input point cloud file.
  * @param alpha_sq The squared alpha value for the shape computation.
- * @param outfile Path for the output mesh file.
+ * @param outfile_str Path for the output mesh file.
  * @param out_format The desired output format ("off" or "ply").
  * @return 1 on success, 0 on failure.
  */
@@ -430,7 +430,7 @@ int generate_fixed_alpha_shape_only_v2(
 
 /**
  * @brief Generates a 3D alpha shape and extracts its connected components.
- * @param ptsfile Path to the input point cloud file.
+ * @param ptsfile_str Path to the input point cloud file.
  * @param alpha_sq The squared alpha value for the shape computation.
  * @param out_asfile Path to save the complete alpha shape mesh. Can be empty.
  * @param out_component_dir Path to the directory where component files will be saved.

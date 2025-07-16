@@ -12,20 +12,8 @@
 using namespace std;
 
 class TopoSegment : public FormanGradient {
-    // Note:
-    // This TopoSegment class doesn't do any postprocessing, e.g., validate and refine segmentation
-    // to decouple steps/functions
-    // TopoSegment just does the segmentation, doesn't care the final segmentation is reasonable or not
-    // due to the data quality or user interests/settings of target trees
-    // We focus on *Data mining*.
-
 protected:
     bool _showlog = false;
-
-    // todo: move the filesystem part to the base FormanGradient class
-    string _infile;
-    string _file_name;
-    string _workspace;
 
     std::map<implicitS, int> _min2lbl;
     // min -> label. valid label starts from 1, <0: invalid labels. 0: not labeled.
@@ -33,20 +21,6 @@ protected:
     std::vector<int> _pts_lbls;
     size_t _segs_num = 0;
 
-    void _set_workspace(const string &infile) {
-        // todo: move to the Formangradient
-        _infile = infile;
-        std::filesystem::path absolutePath = std::filesystem::absolute(infile);
-        _file_name = absolutePath.stem().string();
-        std::filesystem::path parentPath = absolutePath.parent_path();
-        _workspace = parentPath.string() + "/";
-
-        if (_showlog) {
-            cout << "infile: " << _infile << endl;
-            cout << "file name: " << _file_name << endl;
-            cout << "workspace: " << _workspace << endl;
-        }
-    }
 
     int _init() {
         if (sc.getVertexCoordSize() != 4) {
@@ -90,7 +64,6 @@ public:
         // Todo: because base class will be initialized at the beginning
         //  need to double check the set_workspace step.
         _showlog = in_debug;
-        _set_workspace(infile);
         if (_init() > 0) {
             cerr << "Check infile!\nformat: xyzv\n";
             exit(1);
@@ -98,7 +71,7 @@ public:
     }
 
     // point clustering by Forman over-segmentation
-    int cluster(string &out_ptsfile, string &out_minsfile) {
+    int cluster(string &out_ptsfile) {
         std::vector<implicitS> all_mins(criticalS[0].begin(), criticalS[0].end()); // all mins.
         std::map<implicitS, int> min2lbl;
         std::map<implicitS, std::set<implicitS> > min2mins; // critical minima to its directed connected critical minima
@@ -116,73 +89,23 @@ public:
         }
 
         time.start();
-        //_pts_lbls = _label_points_by_grouped_mins(gp_mins);
         _label_points_by_grouped_mins_parallel(gp_mins);
         time.stop();
         cout << "pts labeled by mins computed " << time.getElapsedTime() << " s" << endl;
 
         if (out_ptsfile.empty()) {
             time.start();
-            out_ptsfile = _workspace + _file_name + "_lbl.pts";
-            write_results_xyzl_txt(out_ptsfile);
+            if (_file_extension == ".ply") {
+                out_ptsfile = _workspace + _file_name + "_lbl.ply";
+                _output_pts_with_label_pts_ply(out_ptsfile, _pts_lbls, false);
+            } else {
+                out_ptsfile = _workspace + _file_name + "_lbl.pts";
+                _output_pts_with_label_pts(out_ptsfile, _pts_lbls, false);
+            }
             time.stop();
+            cout << "out_ptsfile=" << out_ptsfile << endl;
             cout << "pts labeled by mins written " << time.getElapsedTime() << " s" << endl;
         }
-
-        return 0;
-        // skip the min network to increase the speed.
-
-        //        std::vector<int> tmp_lbls = _label_points_by_grouped_mins(gp_mins);
-        //        string tmp_outfile = _workspace + _file_name + "_lbl_init.vtk";
-        //        cout << "write: " << tmp_outfile << endl;
-        //        _output_pts_with_label_vtk(tmp_outfile, tmp_lbls, false);
-
-
-        // create min2mins
-        for (const auto &saddle: criticalS[1]) {
-            // edge saddles
-            vector<implicitS> minima;
-            saddle2minima(saddle, minima);
-            implicitS m1, m2;
-            m1 = minima[0];
-            m2 = minima[1];
-            if (m1 == m2) {
-                continue;
-            } else {
-                min2mins[m1].insert(m2);
-                min2mins[m2].insert(m1);
-            }
-        } // create min2mins by saddles
-
-        // output file .off: xyzl
-        if (out_minsfile.empty()) {
-            out_minsfile = _workspace + _file_name + "_mins.off";
-        }
-        size_t edges_num = 0;
-        for (const auto &m: min2mins) {
-            edges_num = edges_num + m.second.size();
-        }
-        ofstream ofs(out_minsfile);
-        ofs << fixed << setprecision(3);
-        ofs << "# OFF\n";
-        ofs << all_mins.size() << " " << edges_num << " 0\n";
-        // points
-        for (const auto &m: all_mins) {
-            vector<int> tmp_vid = m.getConstVertices();
-            vector<float> tmp_coord = sc.getVertex(tmp_vid[0]).getCoordinates();
-            int tmp_lbl = min2lbl[m];
-            ofs << tmp_coord[0] << " " << tmp_coord[1] << " " << tmp_coord[2] << " " << tmp_lbl << endl;
-        }
-        // edges
-        for (const auto &m: min2mins) {
-            int mid1 = min2lbl[m.first] - 1; // index = lbl-1
-            for (const auto &m2: m.second) {
-                int mid2 = min2lbl[m2] - 1;
-                ofs << "2 " << mid1 << " " << mid2 << endl;
-            }
-        }
-        ofs.close();
-
 
         return 0;
     }
@@ -231,7 +154,7 @@ public:
     string label_pts_from_mins_parallel(const bool &output = true);
 
     // Output functions
-    int write_results_xyzl_txt(std::string &outfile = (string &) "") {
+    int write_results_xyzl_txt(std::string &outfile) {
         if (outfile.empty()) {
             outfile = _workspace + _file_name + "_lbl.pts";
         }
@@ -241,7 +164,7 @@ public:
         return 0;
     }
 
-    int write_results_xyzl_vtk(string &outfile = (string &) "") {
+    int write_results_xyzl_vtk(string &outfile) {
         if (outfile.empty()) {
             outfile = _workspace + _file_name + "_lbl.vtk";
         }
@@ -255,10 +178,6 @@ public:
 
 
     // Other functions
-
-    // todo: may independent of tts_aux.h. rename the function
-    //      make it as the inline function in toposegment class?
-    //      move out of the protect
     int tts_read_pts_fs(const string &infile, std::vector<std::vector<float> > &ret_pts) {
         std::string line;
         ifstream fStream(infile);

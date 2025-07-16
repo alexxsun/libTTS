@@ -219,9 +219,6 @@ void SimplicialComplex::readPLY(const char *file) {
     cout << "Complex built with " << vertices.size() << " vertices and top simplices:" << num_topS << endl;
     forman_timer.stop();
     cout << "   ply build IA*: " << forman_timer.getElapsedTime() << " s" << endl;
-
-    // debug
-    exit(1);
 }
 
 void SimplicialComplex::readOFF(const char *file, const int &funID) {

@@ -229,7 +229,10 @@ void TopoSegment::_output_pts_with_label_pts(const string &outfile, const vector
     }
 }
 
-void TopoSegment::_output_pts_with_label_pts_ply(const string &outfile, const vector<int> &lbls, const bool &scaled) {
+
+
+void TopoSegment::_output_pts_with_label_pts_ply(const string &outfile, const vector<int> &lbls,
+                                                    const bool &scaled) {
     /*
         * x y z lbl
         * ...
@@ -251,8 +254,7 @@ void TopoSegment::_output_pts_with_label_pts_ply(const string &outfile, const ve
     happly::PLYData plyOut;
     plyOut.addVertexPositions(ply_vertices);
     // todo: make a good name, check the concept of element, property...
-    plyOut.addElement("l", lbls.size());
-    plyOut.getElement("l").addProperty<int>("pt_label", lbls);
+    plyOut.getElement("vertex").addProperty<int>("label", lbls);
     // Write binary
     plyOut.write(outfile, happly::DataFormat::Binary);
 }

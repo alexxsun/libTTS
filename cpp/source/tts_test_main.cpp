@@ -19,8 +19,8 @@ int test_alpha_shape_segment(const string &infile, const double &alpha_sq_value,
 
 int test_wls(const string &infile) {
     std::cout << "\nTest wood-leaf separation. part 1\n\n";
-    std::string outfile1, outfile2;
-    return get_oversegments(infile, outfile1, outfile2);
+    std::string outfile1;
+    return get_oversegments(infile, outfile1);
 }
 
 int test_tree_extraction(const string &vg_meshfile, const string &trunk_file,
@@ -54,6 +54,10 @@ int main(int argc, char *argv[]) {
         string infile = argv[1];
         double alpha_sq = stod(argv[2]);
         string outfile; // .off file, or ply file
+        if (argc > 3 + 1) {
+            outfile = argv[3];
+            cout << "outfile=" << outfile << "\n";
+        }
         test_alpha_shape_generation(infile, alpha_sq, outfile);
     }
 

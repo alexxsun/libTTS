@@ -25,8 +25,8 @@ std::string generate_alpha_shape_py(
 }
 
 std::string get_oversegments_py(const string &infile) {
-    std::string out_segfile, out_minsfile;
-    int status = get_oversegments(infile, out_segfile, out_minsfile);
+    std::string out_segfile;
+    int status = get_oversegments(infile, out_segfile);
     if (status != 1) {
         throw std::runtime_error("The C++ function failed");
     }

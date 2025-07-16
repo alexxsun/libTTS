@@ -1,176 +1,23 @@
 #include "formangradient.h"
+#include <filesystem> // C++ 17
 #include <omp.h>
 
-FormanGradient::FormanGradient(int argc, char **argv) {
-    sc = SimplicialComplex();
-
-    cout << "Entrato" << endl;
-
-    string fileMesh(argv[1]);
-
-    if (fileMesh.find(".off") != string::npos) {
-        sc.readOFF(fileMesh.c_str());
-    } else if (fileMesh.find(".bin") != string::npos || fileMesh.find(".raw") != string::npos) {
-        vector<int> res;
-        for (int i = 0; i < argc - 2; i++) {
-            res.push_back(atoi(argv[i + 2]));
-        }
-
-        if (res.size() == 2) {
-            sc.readSquareGrid(fileMesh.c_str(), res[0], res[1]);
-        } else if (res.size() == 3) {
-            sc.readCubicalGrid(fileMesh.c_str(), res[0], res[1], res[2]);
-        } else {
-            cout << "Library works only for 2D or 3D datasets" << endl;
-        }
-    } else {
-        cout << "Unknown format" << endl;
-    }
-
-    cout << "Computing fields" << endl;
-    // buildFiltrations(sc);
-    // buildFiltrations2(argc,argv);
-
-    int nField = sc.getVertex(0).getCoordinates().size() - 3;
-    cout << "Simplicial complex dimension " << sc.getComplexDim() << endl;
-    cout << "Number of fields " << nField << endl;
-
-    // create gradient encoding
-    gradient = GradientEncoding(sc);
-
-    filtration = vector<uint>(sc.getVerticesNum(), 0);  // final filtration
-    componentBasedFiltration =
-            vector<vector<uint>>(nField, vector<uint>(sc.getVerticesNum(),
-                                                      0));  // simulation of simplicity for each component
-    scalarValues = vector<vector<float>>(sc.getVerticesNum(), vector<float>(nField, 0));  // input scalar values
-
-    // cout << "Start" << endl;
-
-    vector<pair<float, uint>> injectiveF(sc.getVerticesNum());
-
-    for (int i = 0; i < nField; i++) {
-        for (int j = 0; j < sc.getVerticesNum(); j++) {
-            float val = sc.getVertex(j).getCoordinate(i + 3);
-            scalarValues[j][i] = val;
-            // cout << val << endl;
-            injectiveF[j] = pair<float, uint>(val, j);
-        }
-        // cout << "Stop" << endl;
-
-        sort(injectiveF.begin(), injectiveF.end(),
-             bind(&FormanGradient::filtrComparer, this, boost::placeholders::_1, boost::placeholders::_2));
-        int ind = 0;
-        for (auto p: injectiveF) {
-            componentBasedFiltration[i][p.second] = ind++;
-        }
-    }
-
-    vector<vector<uint>> buildFiltration = vector<vector<uint>>(sc.getVerticesNum(), vector<uint>(nField, 0));
-    for (int i = 0; i < nField; i++) {
-        for (int j = 0; j < sc.getVerticesNum(); j++) {
-            buildFiltration[j][i] = componentBasedFiltration[i][j];
-        }
-    }
-
-    for (int i = 0; i < sc.getVerticesNum(); i++) {
-        buildFiltration[i].push_back(i);
-    }
-
-    sort(buildFiltration.begin(), buildFiltration.end());
-
-    // filtration created
-    int ind = 0;
-    for (auto vec: buildFiltration) {
-        filtration[vec.back()] = ind++;
-    }
-}
-
-FormanGradient::FormanGradient(const string &infile) {
-    // todo: use it carefully.
-    sc = SimplicialComplex();
-
-    cout << "Entrato / Entered" << endl;
-
-    string fileMesh = infile;
-
-    if (fileMesh.find(".off") != string::npos) {
-        sc.readOFF(fileMesh.c_str());
-    }
-    else if (fileMesh.find(".ply") != string::npos) {
-        sc.readPLY(fileMesh.c_str());
-    }
-    else {
-        cout << "infile: " << infile << "\n";
-        cout << "Unknown format" << endl;
-        exit(1);
-    }
-
-    cout << "Computing fields" << endl;
-    // buildFiltrations(sc);
-    // buildFiltrations2(argc,argv);
-
-    int nField = sc.getVertex(0).getCoordinates().size() - 3;
-    cout << "Simplicial complex dimension " << sc.getComplexDim() << endl;
-    cout << "Number of fields " << nField << endl;
-
-    // create gradient encoding
-    gradient = GradientEncoding(sc);
-
-    // final filtration
-    filtration = vector<uint>(sc.getVerticesNum(), 0);
-    // simulation of simplicity for each component
-    componentBasedFiltration = vector<vector<uint>>(nField, vector<uint>(sc.getVerticesNum(), 0));
-    // input scalar values
-    scalarValues = vector<vector<float>>(sc.getVerticesNum(), vector<float>(nField, 0));
-
-    // cout << "Start" << endl;
-    // here we start to calculate filtration, componentBasedFiltration, and scalarValues
-
-    vector<pair<float, uint>> injectiveF(sc.getVerticesNum());
-
-    for (int i = 0; i < nField; i++) {
-        for (int j = 0; j < sc.getVerticesNum(); j++) {
-            float val = sc.getVertex(j).getCoordinate(i + 3); // scalar values
-            scalarValues[j][i] = val; // scalarValues[pt_id, field_id] = val
-            injectiveF[j] = pair<float, uint>(val, j); // (scale_val, pt_id)
-        }
-
-        sort(injectiveF.begin(), injectiveF.end(),
-             bind(&FormanGradient::filtrComparer, this, boost::placeholders::_1, boost::placeholders::_2));
-        // scale_val sm -> lg
-        int ind = 0;
-        for (auto p: injectiveF) {
-            componentBasedFiltration[i][p.second] = ind++;
-            // componentBasedFiltration[field_id, pt_id] = sorted index from sm -> large
-        }
-    }
-
-    vector<vector<uint>> buildFiltration = vector<vector<uint>>(sc.getVerticesNum(), vector<uint>(nField, 0));
-    for (int i = 0; i < nField; i++) {
-        for (int j = 0; j < sc.getVerticesNum(); j++) {
-            buildFiltration[j][i] = componentBasedFiltration[i][j];
-            // buildFiltration[pt_id,field_id] = componentBasedFiltration [field_id, pt_id] = sorted_index
-        }
-    }
-
-    for (int i = 0; i < sc.getVerticesNum(); i++) {
-        buildFiltration[i].push_back(i);
-        // buildFiltration[pt_id] = [field_1_sorted_index, field_2_sorted_index, ..., pt_id]
-    }
-
-    sort(buildFiltration.begin(), buildFiltration.end());
-
-    // filtration created
-    int ind = 0;
-    for (auto vec: buildFiltration) {
-        filtration[vec.back()] = ind++;
-        // filtration[pt_id]= final_filtration_index. sm -> large.
-    }
-}
 
 FormanGradient::FormanGradient(const string &infile, const int &funID) {
+    // get infile infos
+    _infile = infile;
+    std::filesystem::path absolutePath = std::filesystem::absolute(infile);
+    _file_name = absolutePath.stem().string();
+    std::filesystem::path parentPath = absolutePath.parent_path();
+    _workspace = parentPath.string() + "/";
+    _file_extension = absolutePath.extension();
 
-    cout<<"\nReading input\n";
+    cout << "Infile infos:\n";
+    cout << "path: " << absolutePath << endl;
+    cout << "file name: " << _file_name << endl;
+    cout << "extension: " << _file_extension << endl;
+
+    cout << "\nReading input\n";
     IO_Timer time;
     time.start();
     sc = SimplicialComplex();
@@ -181,12 +28,10 @@ FormanGradient::FormanGradient(const string &infile, const int &funID) {
 
     if (fileMesh.find(".off") != string::npos) {
         sc.readOFF(fileMesh.c_str(), funID);
-    }
-    else if (
+    } else if (
         fileMesh.find(".ply") != string::npos) {
         sc.readPLY(fileMesh.c_str());
-    }
-    else {
+    } else {
         cout << "Unknown format" << endl;
         exit(1);
     }
@@ -199,7 +44,7 @@ FormanGradient::FormanGradient(const string &infile, const int &funID) {
     // buildFiltrations(sc);
     // buildFiltrations2(argc,argv);
 
-    int nField = sc.getVertex(0).getCoordinates().size() - 3;  // remove xyz
+    int nField = sc.getVertex(0).getCoordinates().size() - 3; // remove xyz
     cout << "Simplicial complex dimension " << sc.getComplexDim() << endl;
     cout << "** Number of fields to create scalar function value: " << nField << ". **" << endl;
 
@@ -208,13 +53,13 @@ FormanGradient::FormanGradient(const string &infile, const int &funID) {
     // final filtration
     filtration = vector<uint>(sc.getVerticesNum(), 0);
     // simulation of simplicity for each component
-    componentBasedFiltration = vector<vector<uint>>(nField, vector<uint>(sc.getVerticesNum(), 0));
+    componentBasedFiltration = vector<vector<uint> >(nField, vector<uint>(sc.getVerticesNum(), 0));
     // input scalar values
-    scalarValues = vector<vector<float>>(sc.getVerticesNum(), vector<float>(nField, 0));
+    scalarValues = vector<vector<float> >(sc.getVerticesNum(), vector<float>(nField, 0));
 
     // cout << "Start" << endl;
 
-    vector<pair<float, uint>> injectiveF(sc.getVerticesNum());
+    vector<pair<float, uint> > injectiveF(sc.getVerticesNum());
 
     for (int i = 0; i < nField; i++) {
         for (int j = 0; j < sc.getVerticesNum(); j++) {
@@ -233,7 +78,7 @@ FormanGradient::FormanGradient(const string &infile, const int &funID) {
         }
     }
 
-    vector<vector<uint>> buildFiltration = vector<vector<uint>>(sc.getVerticesNum(), vector<uint>(nField, 0));
+    vector<vector<uint> > buildFiltration = vector<vector<uint> >(sc.getVerticesNum(), vector<uint>(nField, 0));
     for (int i = 0; i < nField; i++) {
         for (int j = 0; j < sc.getVerticesNum(); j++) {
             buildFiltration[j][i] = componentBasedFiltration[i][j];
@@ -255,7 +100,8 @@ FormanGradient::FormanGradient(const string &infile, const int &funID) {
     cout << "Filtration time " << time.getElapsedTime() << " s" << endl;
 }
 
-FormanGradient::~FormanGradient() {}
+FormanGradient::~FormanGradient() {
+}
 
 void FormanGradient::computeFormanGradient(bool computeTopsByBatch) {
     cout << "\nCompute Forman Gradient\n";
@@ -273,7 +119,7 @@ void FormanGradient::computeFormanGradient(bool computeTopsByBatch) {
     auto foo = bind(&FormanGradient::cmpSimplexesFiltr, this, boost::placeholders::_1, boost::placeholders::_2);
     time.start();
 
-    #pragma omp parallel for num_threads(6)
+#pragma omp parallel for num_threads(6)
     // todo: set num_threads in a better way, from the user?
     for (uint i = 0; i < filtration.size(); i++) {
         //int thread_id = omp_get_thread_num();
@@ -287,9 +133,10 @@ void FormanGradient::computeFormanGradient(bool computeTopsByBatch) {
 
         for (auto lw: lwStars) {
             // uncomment here for old software
-            homotopy_expansion(lw);  // critical cells generated here
+            homotopy_expansion(lw); // critical cells generated here
 
-            for (auto s: lw) { // the code more likes a debug. todo: remove?
+            for (auto s: lw) {
+                // the code more likes a debug. todo: remove?
                 vector<uint> filtr = this->simplexFiltration(s);
                 pair<int, int> filrNew(filtr[0], filtr[1]);
                 if (filtrationAll.find(filrNew) == filtrationAll.end()) filtrationAll[filrNew] = SSet(foo);
@@ -302,20 +149,20 @@ void FormanGradient::computeFormanGradient(bool computeTopsByBatch) {
 
     // Ciccio said: here I was trying to print out everything for rivet
     // fstream fStream("complexRivet.txt", ios::out);
-//    fStream << "bifiltration" << endl;
-//    fStream << "f1" << endl;
-//    fStream << "f2" << endl;
-//    if (fStream.is_open()) {
-//        for (auto fset: filtrationAll) {
-//            for (auto simpl: fset.second) {
-//                vector<int> indexes = *simpl.getVertices();
-//                for (auto v: indexes)
-//                    fStream << v << " ";
-//                fStream << fset.first.first << " " << fset.first.second << endl;
-//            }
-//        }
-//    }
-//    fStream.close();
+    //    fStream << "bifiltration" << endl;
+    //    fStream << "f1" << endl;
+    //    fStream << "f2" << endl;
+    //    if (fStream.is_open()) {
+    //        for (auto fset: filtrationAll) {
+    //            for (auto simpl: fset.second) {
+    //                vector<int> indexes = *simpl.getVertices();
+    //                for (auto v: indexes)
+    //                    fStream << v << " ";
+    //                fStream << fset.first.first << " " << fset.first.second << endl;
+    //            }
+    //        }
+    //    }
+    //    fStream.close();
 
     // sc.saveVTK("mesh.vtk");
 
@@ -425,7 +272,6 @@ void FormanGradient::homotopy_expansion(SSet &simplexes) {
             }
 
             d++;
-
         } else {
             implicitS critical = *sdiv[d - 1].begin();
             sdiv[d - 1].erase(critical);
@@ -497,7 +343,7 @@ int FormanGradient::numPairableLowerStar(const implicitS &next, const SSet &sset
 
 bool FormanGradient::isPaired(const implicitS &simpl) {
     vector<int> vertices = simpl.getConstVertices();
-    map<uint, vector<explicitS>> tops;
+    map<uint, vector<explicitS> > tops;
 
     // retrieve the fan of top incident into the vertices of next
     for (auto v: vertices) {
@@ -641,16 +487,17 @@ SSet *FormanGradient::vertexLowerStar(uint vert, uint dimension) {
 
 // xx:
 void FormanGradient::saddle2minima(implicitS const &saddle, vector<implicitS> &minima) {
-    assert(saddle.getConstVertices().size() == 2);  // ensure cell is an edge
+    assert(saddle.getConstVertices().size() == 2); // ensure cell is an edge
 
-    for (int i = 0; i < 2; ++i) {  // cell.getConstVertices().size()
+    for (int i = 0; i < 2; ++i) {
+        // cell.getConstVertices().size()
         int cv = saddle.getConstVertices()[i];
-        implicitS s(cv);  // vertex simplex
+        implicitS s(cv); // vertex simplex
         implicitS next;
         // start from its vertex
         if (getPair(s, next)) {
             // fixme: do we need to "assert" here? It seems costly
-            assert(isPaired(next) && isPaired(s));  // double check
+            assert(isPaired(next) && isPaired(s)); // double check
 
             stack<implicitS> st_pairs;
             st_pairs.push(next);
@@ -658,19 +505,20 @@ void FormanGradient::saddle2minima(implicitS const &saddle, vector<implicitS> &m
             while (!st_pairs.empty()) {
                 implicitS top = st_pairs.top();
                 st_pairs.pop();
-                assert(top.getConstVertices().size() == 2);  // ensure it is an edge (saddle)
+                assert(top.getConstVertices().size() == 2); // ensure it is an edge (saddle)
                 cur_v = top.getConstVertices()[0] == cur_v ? top.getConstVertices()[1] : top.getConstVertices()[0];
                 implicitS ns(cur_v);
                 implicitS nnext;
                 if (getPair(ns, nnext)) {
-                    assert(isPaired(nnext) && isPaired(ns));                 // double check
-                    assert(nnext.getDim() == 1 && !sc.theSame(nnext, top));  // 1 is from stCell.getDim()
+                    assert(isPaired(nnext) && isPaired(ns)); // double check
+                    assert(nnext.getDim() == 1 && !sc.theSame(nnext, top)); // 1 is from stCell.getDim()
                     st_pairs.push(nnext);
                 } else {
                     minima.push_back(ns);
                 }
             }
-        } else {  // critical 0-cell is on the 1-cell edge
+        } else {
+            // critical 0-cell is on the 1-cell edge
             minima.push_back(s);
         }
     }
@@ -711,10 +559,10 @@ void FormanGradient::saddle2maxima(const implicitS &saddle, vector<implicitS> &m
                     cout << "find max, not in list: " << s << endl;
                 }
                 //cout << "x-> " << s << " Critical vs " << (criticalS[2].find(s) != criticalS[2].end()) << endl;
-//                if (!vpath.empty()) {
-//                    vpaths.push_back(vpath);
-//                }
-//                vpath.clear();
+                //                if (!vpath.empty()) {
+                //                    vpaths.push_back(vpath);
+                //                }
+                //                vpath.clear();
             }
         }
         delete bd;
@@ -742,7 +590,7 @@ void FormanGradient::critical_tri2tetras(implicitS const &tri, vector<implicitS>
                 }
             } else {
                 // cout << "-> " << s << " Critical vs " << (criticalS[3].find(s) != criticalS[3].end()) << endl;
-                assert(criticalS[3].find(s) != criticalS[3].end());  // ensure it is critical tetra
+                assert(criticalS[3].find(s) != criticalS[3].end()); // ensure it is critical tetra
                 con_tetras.insert(s);
             }
         }
@@ -784,17 +632,18 @@ void FormanGradient::critical_tetra2tris(const implicitS &tetra, vector<implicit
     }
 }
 
-void FormanGradient::saddle2min_vpaths(const implicitS &saddle, std::vector<std::vector<int>> &vpaths) {
-    for (int i = 0; i < 2; ++i) {  // cell.getConstVertices().size()
+void FormanGradient::saddle2min_vpaths(const implicitS &saddle, std::vector<std::vector<int> > &vpaths) {
+    for (int i = 0; i < 2; ++i) {
+        // cell.getConstVertices().size()
         vector<int> vpath;
         int cv = saddle.getConstVertices()[i];
         vpath.push_back(cv);
 
-        implicitS s(cv);  // vertex simplex
+        implicitS s(cv); // vertex simplex
         implicitS next;
         // start from its vertex
         if (getPair(s, next)) {
-            assert(isPaired(next) && isPaired(s));  // double check?
+            assert(isPaired(next) && isPaired(s)); // double check?
 
             stack<implicitS> st_pairs;
             st_pairs.push(next);
@@ -802,15 +651,15 @@ void FormanGradient::saddle2min_vpaths(const implicitS &saddle, std::vector<std:
             while (!st_pairs.empty()) {
                 implicitS top = st_pairs.top();
                 st_pairs.pop();
-                assert(top.getConstVertices().size() == 2);  // ensure it is an edge (saddle)
+                assert(top.getConstVertices().size() == 2); // ensure it is an edge (saddle)
                 cur_v = top.getConstVertices()[0] == cur_v ? top.getConstVertices()[1] : top.getConstVertices()[0];
                 vpath.push_back(cur_v);
                 implicitS ns(cur_v);
                 implicitS nnext;
                 if (getPair(ns, nnext)) {
-                    assert(isPaired(nnext) && isPaired(ns));                 // double check
+                    assert(isPaired(nnext) && isPaired(ns)); // double check
                     assert(nnext.getDim() == 1 &&
-                           !sc.theSame(nnext, top));  // stCell.getDim() = 1, means 2 vertices. => edge
+                        !sc.theSame(nnext, top)); // stCell.getDim() = 1, means 2 vertices. => edge
                     st_pairs.push(nnext);
                 }
                 //                    else {
@@ -830,7 +679,7 @@ void FormanGradient::saddle2min_vpaths(const implicitS &saddle, std::vector<std:
     }
 }
 
-void FormanGradient::saddle2max_vpaths(implicitS const &saddle, std::vector<std::vector<implicitS>> &vpaths) {
+void FormanGradient::saddle2max_vpaths(implicitS const &saddle, std::vector<std::vector<implicitS> > &vpaths) {
     // todo: check this code.
     // in 2d case, 1 max -> ?? saddles?
     // 1 saddle -> 2 max.
@@ -870,5 +719,4 @@ void FormanGradient::saddle2max_vpaths(implicitS const &saddle, std::vector<std:
         }
         delete bd;
     }
-
 }

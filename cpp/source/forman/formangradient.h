@@ -9,17 +9,18 @@
 #include "morseincidencegraph.h"
 
 // todo: replace boost::function
-typedef set<implicitS, boost::function<bool(const implicitS &, const implicitS &)>> SSet;
-typedef map<implicitS, Node *, boost::function<bool(const implicitS &, const implicitS &)>> SMap;
-typedef map<implicitS, unsigned, boost::function<bool(const implicitS &, const implicitS &)>> SUMap;
-typedef map<implicitS, bool, boost::function<bool(const implicitS &, const implicitS &)>> SBMap;
+typedef set<implicitS, boost::function<bool(const implicitS &, const implicitS &)> > SSet;
+typedef map<implicitS, Node *, boost::function<bool(const implicitS &, const implicitS &)> > SMap;
+typedef map<implicitS, unsigned, boost::function<bool(const implicitS &, const implicitS &)> > SUMap;
+typedef map<implicitS, bool, boost::function<bool(const implicitS &, const implicitS &)> > SBMap;
 
 struct Simpl {
 public:
     Arc *arc;
     double val;
 
-    inline Simpl(Arc *a, double v) : arc(a), val(v) {}
+    inline Simpl(Arc *a, double v) : arc(a), val(v) {
+    }
 };
 
 struct SortSimpl {
@@ -34,26 +35,26 @@ struct SortSimpl {
 typedef priority_queue<Simpl, vector<Simpl>, SortSimpl> SimplQ;
 
 class FormanGradient {
-protected:  // private:
-    // SimplicialComplex sc need to be accessed in FormanGradient's child class
-    //  private ->  protected
+protected:
+    // file infos
+    string _infile;
+    string _file_name;
+    string _file_extension;
+    string _workspace;
 
-    vector<uint> filtration;             // for each vertex its filtration value
-    vector<vector<float>> scalarValues;  // for each vertex its field value
+    //
+    vector<uint> filtration; // for each vertex its filtration value
+    vector<vector<float> > scalarValues; // for each vertex its field value
     // [Vertices x number of fields] // todo: only one field
-    vector<vector<uint>> componentBasedFiltration;  // injective function for each component
+    vector<vector<uint> > componentBasedFiltration; // injective function for each component
     // [number of fields x Vertices ]
 
     GradientEncoding gradient;
-    map<uint, SSet> criticalS;  // dim: simplexes
+    map<uint, SSet> criticalS; // dim: simplexes
 
     SimplicialComplex sc;
 
 public:
-    FormanGradient(int, char **);
-
-    FormanGradient(const string &infile);
-
     FormanGradient(const string &infile, const int &funID);
 
     ~FormanGradient();
@@ -71,12 +72,13 @@ public:
     void xx_vis_CriticalCells_01(const string &vtkfile, const bool &scaled = false);
 
     void xx_vis_VPath_01(const string &vtkfile, const bool &scaled = false, const bool &outdebugfile = false);
+
     void xx_vis_VPath_12(const string &vtkfile, const bool &scaled = false, const bool &outdebugfile = false);
 
     void xx_visMorse(const string &output_prefix);
 
 
-    void xx_critical_cells_net_2d(const string &vtkfile, const string&txtfile);
+    void xx_critical_cells_net_2d(const string &vtkfile, const string &txtfile);
 
 
     void xx_output_critical_cells(const string &outfile);
@@ -97,8 +99,8 @@ public:
 protected:
     // xx: get saddle (edge)'s connected minima (vertex)
     void saddle2minima(implicitS const &saddle, vector<implicitS> &minima);
-    void saddle2maxima(implicitS const &saddle, vector<implicitS> &maxima);
 
+    void saddle2maxima(implicitS const &saddle, vector<implicitS> &maxima);
 
 
     // xx: get critical tetra's connected triangles
@@ -108,34 +110,39 @@ protected:
 
     // xx: v-path from saddle to min.
     // two paths. each path last item is the min point id (based on the global point id)
-    void saddle2min_vpaths(implicitS const &saddle, std::vector<std::vector<int>> &vpaths);
-    void saddle2max_vpaths(implicitS const &saddle, std::vector<std::vector<implicitS>> &vpaths);
+    void saddle2min_vpaths(implicitS const &saddle, std::vector<std::vector<int> > &vpaths);
 
-    SSet *vertexLowerStar(uint vert, uint d);  // compute the lower star of vert (only simplices of dimension=d)
+    void saddle2max_vpaths(implicitS const &saddle, std::vector<std::vector<implicitS> > &vpaths);
+
+    SSet *vertexLowerStar(uint vert, uint d); // compute the lower star of vert (only simplices of dimension=d)
 
     void splitVertexLowerStar(int v, vector<SSet> &lwStars);
+
     // split the lower star of a vertex v according to the sublevelsets of the function
 
-    void homotopy_expansion(SSet &);  // apply homotopy expansion on a set of simplices
+    void homotopy_expansion(SSet &); // apply homotopy expansion on a set of simplices
 
     int numPairableLowerStar(const implicitS &next, const SSet &sset, implicitS &pair);
+
     // return the number of simplices pairable with next in the lower star, pair is one of these
 
-    bool isPaired(const implicitS &simpl);  // true if simpl is paired with another simplex
+    bool isPaired(const implicitS &simpl); // true if simpl is paired with another simplex
 
     void setPair(const implicitS &next, const implicitS &pair);
+
     // set the new gradient pair between next and pair (NOTE: next has to be bigger than pair)
 
-    bool getPair(const implicitS &simpl, implicitS &next);  // next is the simplex paired with simpl
+    bool getPair(const implicitS &simpl, implicitS &next); // next is the simplex paired with simpl
 
-    void freePair(const implicitS &next, const implicitS &pair);  // remove pair (next,pair) from the gradient
+    void freePair(const implicitS &next, const implicitS &pair); // remove pair (next,pair) from the gradient
     // (NOTE: next has to be bigger than pair)
 
     vector<uint> simplexFiltration(const implicitS &simpl);
+
     // return the vector-valued filtration for a simplex. Each component is obtained as the
     // maximum of the filtrations of its vertices
 
-    vector<float> simplexScalarValue(const implicitS &simpl);  // return the vector-valued function for a
+    vector<float> simplexScalarValue(const implicitS &simpl); // return the vector-valued function for a
     // simplex. Each component is obtained as the maximum of the function values of its vertices
 
     // Output functions
@@ -145,22 +152,21 @@ protected:
 
     void computeAscendingCell_xx(bool output, implicitS const &cell, SSet &desCells);
 
-    void print_out(const char *fileName, list <SSet> const &cells, int param, int dim);
+    void print_out(const char *fileName, list<SSet> const &cells, int param, int dim);
 
-    void out3cells(const list <SSet> &cells, const string &outfile = "descending3cells.vtk");
+    void out3cells(const list<SSet> &cells, const string &outfile = "descending3cells.vtk");
 
-    void out2cells(const list <SSet> &cells, bool desc);
+    void out2cells(const list<SSet> &cells, bool desc);
 
-    void out1cells(const list <SSet> &cells, bool desc);
+    void out1cells(const list<SSet> &cells, bool desc);
 
-    void out0cells(const list <SSet> &cells, const string &filename = "");
+    void out0cells(const list<SSet> &cells, const string &filename = "");
 
     void outCriticalPoints(const SSet &cells);
 
     void outCriticalPoints_01(const SSet &cells);
 
-    void accurate_asc1cells(const list <SSet> &cells, const string&vtkfile="");
-
+    void accurate_asc1cells(const list<SSet> &cells, const string &vtkfile = "");
 
 
     // Compare the filtration index of the two simplexes (single value filtration)
