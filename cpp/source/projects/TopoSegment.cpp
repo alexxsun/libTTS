@@ -230,9 +230,8 @@ void TopoSegment::_output_pts_with_label_pts(const string &outfile, const vector
 }
 
 
-
 void TopoSegment::_output_pts_with_label_pts_ply(const string &outfile, const vector<int> &lbls,
-                                                    const bool &scaled) {
+                                                 const bool &scaled) {
     /*
         * x y z lbl
         * ...

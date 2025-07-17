@@ -1,11 +1,10 @@
 #include "simplicialcomplex.h"
 #include "Timer.h"
 #include "../io_support/happly.h"
-// todo: make happly optional based on setting
 // todo: process duplicated points from input
 
 void SimplicialComplex::readOFF(const char *file) {
-    // todo: note: use it carefully. No duplicated points process
+    // note: use it carefully. No duplicated points process
 
     // Each vertex is represented by a list of coordinates. The last coordinate is used as field value.
     // https://github.com/IuricichF/SimplForman3D
@@ -50,17 +49,6 @@ void SimplicialComplex::readOFF(const char *file) {
             getline(fStream, line);
             istringstream iss(line);
 
-#define _xxway_ 1
-#if _xxway_ == 0
-            // ciccio's way
-            string coord;
-            list<float> coords;
-            while (getline(iss, coord, ' ')) {
-              coords.push_back(atof(coord.c_str()));
-            }
-            vector<float> coordinates(coords.begin(), coords.end());
-#else
-            // xin's way
             vector<float> coordinates;
             // https://stackoverflow.com/questions/9986091/how-do-you-convert-a-string-into-an-array-of-floats
             std::copy(std::istream_iterator<float>(iss), std::istream_iterator<float>(),
@@ -71,8 +59,7 @@ void SimplicialComplex::readOFF(const char *file) {
             sc_min_y = sc_min_y < coordinates[1] ? sc_min_y : coordinates[1];
             sc_min_z = sc_min_z < coordinates[2] ? sc_min_z : coordinates[2];
             sc_max_z = sc_max_z > coordinates[2] ? sc_max_z : coordinates[2];
-#endif
-#undef _xxway_
+
 
             if (coordinates.size() != 4) {
                 cout << "ensure x y z f\n";
@@ -131,7 +118,7 @@ void SimplicialComplex::readOFF(const char *file) {
 }
 
 void SimplicialComplex::readPLY(const char *file) {
-    // todo: note: use it carefully. No duplicated points process
+    // note: use it carefully. No duplicated points process
 
     // Each vertex is represented by a list of coordinates. The last coordinate is used as field value.
     // https://github.com/IuricichF/SimplForman3D
@@ -214,15 +201,15 @@ void SimplicialComplex::readPLY(const char *file) {
     }
 
     forman_timer.start();
-    //buildDataStructure();
-    buildDataStructure_parallel();
+    buildDataStructure();
+    //buildDataStructure_parallel();
     cout << "Complex built with " << vertices.size() << " vertices and top simplices:" << num_topS << endl;
     forman_timer.stop();
     cout << "   ply build IA*: " << forman_timer.getElapsedTime() << " s" << endl;
 }
 
 void SimplicialComplex::readOFF(const char *file, const int &funID) {
-    // todo: the scalar function value is a vector of coordinate without xyz
+    // note: the scalar function value is a vector of coordinate without xyz
     //  carefully to set/use the funID!
 
     // reader for the OFF file
@@ -287,7 +274,6 @@ void SimplicialComplex::readOFF(const char *file, const int &funID) {
             sc_min_z = sc_min_z < coordinates[2] ? sc_min_z : coordinates[2];
             sc_max_z = sc_max_z > coordinates[2] ? sc_max_z : coordinates[2];
             //
-            // todo: carefully! the field value is the coord without xyz! prefer
             switch (manualFieldValues) {
                 case 0:
                     // do nothing
@@ -352,14 +338,6 @@ void SimplicialComplex::readOFF(const char *file, const int &funID) {
                 topVertices[k] = pts_old2new[vid]; // use new point id
             }
 
-            // old method of reading cells
-            //            fStream >> nVIndexes;
-            //            vector<int> topVertices(nVIndexes);
-            //            for (int k = 0; k < nVIndexes; k++) {
-            //                int vid;
-            //                fStream >> vid;
-            //                topVertices[k] = pts_old2new[vid];  // use new point id
-            //            }
 
             TopSimplex topS(topVertices);
             if (topSimplexeslists.find(topS.getDimension()) == topSimplexeslists.end()) {

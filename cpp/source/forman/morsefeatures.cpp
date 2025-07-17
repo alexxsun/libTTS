@@ -2,8 +2,7 @@
 
 #include "formangradient.h"
 
-// todo: review the code.
-/// Ciccio
+// original
 // Compute DescendingCells (desCells) for the given cell (cell).
 // given cell should be a critical simplex. >=1
 // DO NOT MODFIY the code.
@@ -57,7 +56,7 @@ void FormanGradient::computeDescendingCell(bool output, implicitS const &cell, S
     }
 }
 
-/// Ciccio
+/// original
 // Compute AscendingCell (ascCells) for the given cell (cell).
 // given cell should be a critical simplex. not the max simplex in the data
 
@@ -85,7 +84,8 @@ void FormanGradient::computeAscendingCell(bool output, implicitS const &cell, SS
         qu.pop();
         vector<implicitS> *bd = sc.coboundaryk(top, top.getDim() + 1);
 
-        for (auto s: *bd) {  // *bd
+        for (auto s: *bd) {
+            // *bd
             implicitS next;
             if (getPair(s, next)) {
                 if (next.getDim() == cell.getDim() && !sc.theSame(next, top)) {
@@ -133,7 +133,8 @@ void FormanGradient::computeAscendingCell_xx(bool output, implicitS const &cell,
         qu.pop();
         vector<implicitS> *bd = sc.coboundaryk(top, top.getDim() + 1);
 
-        for (auto s: *bd) {  // *bd
+        for (auto s: *bd) {
+            // *bd
             implicitS next;
             if (getPair(s, next)) {
                 if (next.getDim() == cell.getDim() && !sc.theSame(next, top)) {
@@ -156,10 +157,10 @@ void FormanGradient::computeAscendingCell_xx(bool output, implicitS const &cell,
         delete bd;
         // finish visiting all co-boundary
         // add to ascCells
-//        if (output) {
-//            ascCells.insert(cellsPath.begin(), cellsPath.end());
-//            cellsPath.clear();
-//        }
+        //        if (output) {
+        //            ascCells.insert(cellsPath.begin(), cellsPath.end());
+        //            cellsPath.clear();
+        //        }
     }
 }
 
@@ -179,7 +180,6 @@ void FormanGradient::visMorse() {
                 //computeAscendingCell_xx(true, c, ascending);
                 computeAscendingCell(true, c, ascending);
                 ascending1manifold.push_back(ascending);
-
             }
 
             // xx's test

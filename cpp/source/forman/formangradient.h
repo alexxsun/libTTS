@@ -64,11 +64,9 @@ public:
     // stored explicitly (higher memory consumption but lower timings)
     void computeFormanGradient(bool batchTop);
 
-
     // Visualization functions
     void visMorse();
 
-    // Xin's visualization
     void xx_vis_CriticalCells_01(const string &vtkfile, const bool &scaled = false);
 
     void xx_vis_VPath_01(const string &vtkfile, const bool &scaled = false, const bool &outdebugfile = false);
@@ -77,9 +75,7 @@ public:
 
     void xx_visMorse(const string &output_prefix);
 
-
     void xx_critical_cells_net_2d(const string &vtkfile, const string &txtfile);
-
 
     void xx_output_critical_cells(const string &outfile);
 
@@ -87,63 +83,52 @@ public:
 
     void xx_vis_paired_arrows(const string &outfile);
 
-    // todo: check code. not finished. need debug.
-    // https://github.com/IuricichF/FormanGradient2D/blob/master/source/LibForman/io.cpp#L221
-    void writeVTK_gradient_2d(const string &vtkfile);
-
-    void write_critical_persistence_2d(const string &outfile);
-
-
-    // private:
-    // some functions need to be accessed in FormanGradient's child class,so change private to protected
 protected:
-    // xx: get saddle (edge)'s connected minima (vertex)
+    // get saddle (edge)'s connected minima (vertex)
     void saddle2minima(implicitS const &saddle, vector<implicitS> &minima);
 
     void saddle2maxima(implicitS const &saddle, vector<implicitS> &maxima);
 
-
-    // xx: get critical tetra's connected triangles
-    void critical_tri2tetras(implicitS const &tri, vector<implicitS> &tetras);
-
-    void critical_tetra2tris(const implicitS &tetra, vector<implicitS> &tris);
-
-    // xx: v-path from saddle to min.
+    // v-path from saddle to min.
     // two paths. each path last item is the min point id (based on the global point id)
     void saddle2min_vpaths(implicitS const &saddle, std::vector<std::vector<int> > &vpaths);
 
     void saddle2max_vpaths(implicitS const &saddle, std::vector<std::vector<implicitS> > &vpaths);
 
-    SSet *vertexLowerStar(uint vert, uint d); // compute the lower star of vert (only simplices of dimension=d)
+    // core functions
 
-    void splitVertexLowerStar(int v, vector<SSet> &lwStars);
+    // compute the lower star of vert (only simplices of dimension=d)
+    SSet *vertexLowerStar(uint vert, uint d);
 
     // split the lower star of a vertex v according to the sublevelsets of the function
+    void splitVertexLowerStar(int v, vector<SSet> &lwStars);
 
-    void homotopy_expansion(SSet &); // apply homotopy expansion on a set of simplices
-
-    int numPairableLowerStar(const implicitS &next, const SSet &sset, implicitS &pair);
+    // apply homotopy expansion on a set of simplices
+    void homotopy_expansion(SSet &);
 
     // return the number of simplices pairable with next in the lower star, pair is one of these
+    int numPairableLowerStar(const implicitS &next, const SSet &sset, implicitS &pair);
 
-    bool isPaired(const implicitS &simpl); // true if simpl is paired with another simplex
-
-    void setPair(const implicitS &next, const implicitS &pair);
+    // true if simpl is paired with another simplex
+    bool isPaired(const implicitS &simpl);
 
     // set the new gradient pair between next and pair (NOTE: next has to be bigger than pair)
+    void setPair(const implicitS &next, const implicitS &pair);
 
-    bool getPair(const implicitS &simpl, implicitS &next); // next is the simplex paired with simpl
+    // next is the simplex paired with simpl
+    bool getPair(const implicitS &simpl, implicitS &next);
 
-    void freePair(const implicitS &next, const implicitS &pair); // remove pair (next,pair) from the gradient
+    // remove pair (next,pair) from the gradient
     // (NOTE: next has to be bigger than pair)
-
-    vector<uint> simplexFiltration(const implicitS &simpl);
+    void freePair(const implicitS &next, const implicitS &pair);
 
     // return the vector-valued filtration for a simplex. Each component is obtained as the
     // maximum of the filtrations of its vertices
+    vector<uint> simplexFiltration(const implicitS &simpl);
 
-    vector<float> simplexScalarValue(const implicitS &simpl); // return the vector-valued function for a
+    // return the vector-valued function for a
     // simplex. Each component is obtained as the maximum of the function values of its vertices
+    vector<float> simplexScalarValue(const implicitS &simpl);
 
     // Output functions
     void computeDescendingCell(bool output, implicitS const &cell, SSet &desCells);
@@ -199,8 +184,7 @@ protected:
         return lhs.getDim() < rhs.getDim();
     }
 
-    // Compare the filtration index of the two simplexes (vector-valued
-    // filtration)
+    // Compare the filtration index of the two simplexes (vector-valued filtration)
     bool cmpInjectiveFiltr(const implicitS &lhs, const implicitS &rhs) {
         if (lhs.getDim() == rhs.getDim()) {
             vector<uint> fValuesL = simplexFiltration(lhs);
@@ -245,7 +229,7 @@ public:
 
         auto foo = bind(&FormanGradient::cmpSimplexesFiltr, this, boost::placeholders::_1, boost::placeholders::_2);
 
-        // ciccio's code
+        // old code
         //    SSet cp = SSet(foo);
         //    for (auto lvl : criticalS) {
         //      cp.insert(lvl.second.begin(), lvl.second.end());

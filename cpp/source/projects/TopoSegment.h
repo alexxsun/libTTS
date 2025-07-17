@@ -21,7 +21,6 @@ protected:
     std::vector<int> _pts_lbls;
     size_t _segs_num = 0;
 
-
     int _init() {
         if (sc.getVertexCoordSize() != 4) {
             return 1; // sth wrong
@@ -61,8 +60,6 @@ protected:
 public:
     // constructor:
     TopoSegment(const string &infile, const int &fid, const bool &in_debug = false) : FormanGradient(infile, fid) {
-        // Todo: because base class will be initialized at the beginning
-        //  need to double check the set_workspace step.
         _showlog = in_debug;
         if (_init() > 0) {
             cerr << "Check infile!\nformat: xyzv\n";
@@ -78,7 +75,6 @@ public:
 
         // measure the time usage
         IO_Timer time;
-
         cout << "output over-segmentation results\n";
         std::map<int, std::vector<implicitS> > gp_mins;
         int lbl = 1; // min index of all_min = lbl-1
@@ -105,6 +101,8 @@ public:
             time.stop();
             cout << "out_ptsfile=" << out_ptsfile << endl;
             cout << "pts labeled by mins written " << time.getElapsedTime() << " s" << endl;
+        } else {
+            time.stop();
         }
 
         return 0;

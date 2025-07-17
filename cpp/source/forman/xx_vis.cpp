@@ -9,7 +9,7 @@ void FormanGradient::xx_output_critical_cells(const string &outfile) {
     // min: vertex, saddle: edge, middle point, triangle: centroid point
     // output format
     // x y z type [min:0, saddle:1, ...]
-    std::vector<std::array<double, 4>> cc_pts;  // (x,y,z,type)
+    std::vector<std::array<double, 4> > cc_pts; // (x,y,z,type)
     for (int i = 0; i < 3; i++) {
         for (const auto &cc: criticalS[i]) {
             vector<int> vertices = cc.getConstVertices();
@@ -60,7 +60,7 @@ void FormanGradient::xx_output_critical_cells(const string &outfile) {
 int FormanGradient::xx_output_critical_cells_vtk(const string &vtkfile) {
     // min: vertex, saddle: edge, max: triangle
 
-    std::vector<std::array<double, 3>> cc_pts;
+    std::vector<std::array<double, 3> > cc_pts;
     int cp_min_num = 0, cp_min_st = 0, cp_saddle_num = 0, cp_saddle_st = 0, cp_max_num = 0, cp_max_st = 0;
 
     // mins
@@ -122,9 +122,9 @@ int FormanGradient::xx_output_critical_cells_vtk(const string &vtkfile) {
     ofstream ofs(vtkfile);
     ofs << fixed << setprecision(3);
     ofs << "# vtk DataFile Version 2.0\n"
-           "critical cells\n"
-           "ASCII\n"
-           "DATASET UNSTRUCTURED_GRID\n";
+            "critical cells\n"
+            "ASCII\n"
+            "DATASET UNSTRUCTURED_GRID\n";
     // points
     ofs << "POINTS " << cc_pts.size() << " float\n";
     for (const auto &pt: cc_pts) {
@@ -132,8 +132,8 @@ int FormanGradient::xx_output_critical_cells_vtk(const string &vtkfile) {
     }
     // cells
     ofs << "CELLS " << cells_num << " "
-        << 2 * cp_min_num + 3 * cp_saddle_num + 4 * cp_max_num
-        << endl;
+            << 2 * cp_min_num + 3 * cp_saddle_num + 4 * cp_max_num
+            << endl;
     for (int i = 0; i < cp_min_num; ++i) {
         ofs << "1 " << i << endl;
     }
@@ -177,20 +177,19 @@ int FormanGradient::xx_output_critical_cells_vtk(const string &vtkfile) {
     //
     ofs.close();
 
-    return 0;// everything goes well
+    return 0; // everything goes well
 }
 
 void FormanGradient::xx_vis_CriticalCells_01(const string &vtkfile, const bool &scaled) {
-    // scaled: scaled version or not. only scale x,y
-    //
+    // scaled: scaled or not. only scale x,y
 
-    vector<vector<int>> ccs;       // critical cells
-    vector<Vertex> saddle_points;  // saddle middle point
+    vector<vector<int> > ccs; // critical cells
+    vector<Vertex> saddle_points; // saddle middle point
 
     for (const auto &cc: criticalS[0]) {
         ccs.push_back(cc.getConstVertices());
     }
-    size_t saddle_sid = ccs.size();  // saddle begin id, also the pts number of the
+    size_t saddle_sid = ccs.size(); // saddle begin id, also the pts number of the
     // critical minimal points
     for (const auto &cc: criticalS[1]) {
         ccs.push_back(cc.getConstVertices());
@@ -201,7 +200,7 @@ void FormanGradient::xx_vis_CriticalCells_01(const string &vtkfile, const bool &
         saddle_points.push_back(v);
     }
 
-    map<int, int> old2new;  // original point id -> written vtk point id
+    map<int, int> old2new; // original point id -> written vtk point id
     int pts_num = 0;
     for (auto &cp: ccs) {
         for (auto p: cp) {
@@ -219,31 +218,31 @@ void FormanGradient::xx_vis_CriticalCells_01(const string &vtkfile, const bool &
     size_t cell_num = saddle_sid + 2 * saddle_points.size();
 
     // count # of points below each critical point
-    vector<int> lp_nums;  // low points number todo: remove it.
+    vector<int> lp_nums; // low points number todo: remove it.
     for (int i = 0; i < saddle_sid; ++i) {
         int nid = ccs[i][0];
         Vertex p = sc.getVertex(nid);
-        lp_nums.push_back(0);  // lp_nums.push_back(tm_getLPnumber(p));
+        lp_nums.push_back(0); // lp_nums.push_back(tm_getLPnumber(p));
     }
 
     for (auto &v: saddle_points) {
-        lp_nums.push_back(0);  // lp_nums.push_back(tm_getLPnumber(v));
-        lp_nums.push_back(0);  // lp_nums.push_back(tm_getLPnumber(v));
+        lp_nums.push_back(0); // lp_nums.push_back(tm_getLPnumber(v));
+        lp_nums.push_back(0); // lp_nums.push_back(tm_getLPnumber(v));
     }
 
     // write vtk
     ofstream ofs(vtkfile);
     ofs << "# vtk DataFile Version 2.0\n"
-           "critical cells\n"
-           "ASCII\n"
-           "DATASET UNSTRUCTURED_GRID\n";
+            "critical cells\n"
+            "ASCII\n"
+            "DATASET UNSTRUCTURED_GRID\n";
     // points
     ofs << "POINTS " << pts_num + saddle_points.size() << " float\n";
     for (const auto &v: new2old) {
         Vertex ver = sc.getVertex(v);
         if (scaled) {
             ofs << ver.getCoordinate(0) - sc.sc_min_x << " " << ver.getCoordinate(1) - sc.sc_min_y << " "
-                << ver.getCoordinate(2) << endl;
+                    << ver.getCoordinate(2) << endl;
         } else {
             ofs << ver.getCoordinate(0) << " " << ver.getCoordinate(1) << " " << ver.getCoordinate(2) << endl;
         }
@@ -251,7 +250,7 @@ void FormanGradient::xx_vis_CriticalCells_01(const string &vtkfile, const bool &
     for (auto &ver: saddle_points) {
         if (scaled) {
             ofs << ver.getCoordinate(0) - sc.sc_min_x << " " << ver.getCoordinate(1) - sc.sc_min_y << " "
-                << ver.getCoordinate(2) << endl;
+                    << ver.getCoordinate(2) << endl;
         } else {
             ofs << ver.getCoordinate(0) << " " << ver.getCoordinate(1) << " " << ver.getCoordinate(2) << endl;
         }
@@ -340,19 +339,21 @@ void FormanGradient::xx_vis_paired_arrows(const string &outfile) {
 void FormanGradient::xx_vis_VPath_01(const string &vtkfile, const bool &scaled, const bool &outdebugfile) {
     // get separatrix v-path: a array of cells. -> save vertices of cells
     // -> vector<vector<int>> vpaths; start from the end point of saddle edge
-    vector<vector<int>> v_paths;
-    for (const auto &cc_1: criticalS[1]) {  // critical 1-cells
-        for (int i = 0; i < 2; ++i) {          // cell.getConstVertices().size()
+    vector<vector<int> > v_paths;
+    for (const auto &cc_1: criticalS[1]) {
+        // critical 1-cells
+        for (int i = 0; i < 2; ++i) {
+            // cell.getConstVertices().size()
             vector<int> vpath;
             int cv = cc_1.getConstVertices()[i];
             vpath.push_back(cv);
 
-            implicitS s(cv);  // vertex simplex
+            implicitS s(cv); // vertex simplex
             implicitS next;
             // start from its vertex
             if (getPair(s, next)) {
                 // todo: do we need to "assert" here? It seems costly
-                assert(isPaired(next) && isPaired(s));  // double check?
+                assert(isPaired(next) && isPaired(s)); // double check?
 
                 stack<implicitS> st_pairs;
                 st_pairs.push(next);
@@ -360,14 +361,14 @@ void FormanGradient::xx_vis_VPath_01(const string &vtkfile, const bool &scaled, 
                 while (!st_pairs.empty()) {
                     implicitS top = st_pairs.top();
                     st_pairs.pop();
-                    assert(top.getConstVertices().size() == 2);  // ensure it is an edge (saddle)
+                    assert(top.getConstVertices().size() == 2); // ensure it is an edge (saddle)
                     cur_v = top.getConstVertices()[0] == cur_v ? top.getConstVertices()[1] : top.getConstVertices()[0];
                     vpath.push_back(cur_v);
                     implicitS ns(cur_v);
                     implicitS nnext;
                     if (getPair(ns, nnext)) {
-                        assert(isPaired(nnext) && isPaired(ns));                 // double check
-                        assert(nnext.getDim() == 1 && !sc.theSame(nnext, top));  // 1 is from stCell.getDim()
+                        assert(isPaired(nnext) && isPaired(ns)); // double check
+                        assert(nnext.getDim() == 1 && !sc.theSame(nnext, top)); // 1 is from stCell.getDim()
                         st_pairs.push(nnext);
                     }
                     //                    else {
@@ -386,7 +387,7 @@ void FormanGradient::xx_vis_VPath_01(const string &vtkfile, const bool &scaled, 
     // organize cells
     // consider fork cases... -> one saddles has two same critical vertices, some
     // sep vpaths have some v-paths in common
-    map<int, int> old2new;  // original point id -> written vtk point id
+    map<int, int> old2new; // original point id -> written vtk point id
     int pts_num = 0;
     size_t cell_num = v_paths.size();
     size_t cell_items_num = 0;
@@ -411,16 +412,16 @@ void FormanGradient::xx_vis_VPath_01(const string &vtkfile, const bool &scaled, 
     ofstream ofs(vtkfile);
     ofs << fixed << setprecision(2);
     ofs << "# vtk DataFile Version 2.0\n"
-           "tm graph\n"
-           "ASCII\n"
-           "DATASET UNSTRUCTURED_GRID\n";
+            "tm graph\n"
+            "ASCII\n"
+            "DATASET UNSTRUCTURED_GRID\n";
     // points
     ofs << "POINTS " << pts_num << " float\n";
     for (const auto &v: new2old) {
         Vertex ver = sc.getVertex(v);
         if (scaled) {
             ofs << ver.getCoordinate(0) - sc.sc_min_x << " " << ver.getCoordinate(1) - sc.sc_min_y << " "
-                << ver.getCoordinate(2) << endl;
+                    << ver.getCoordinate(2) << endl;
         } else {
             ofs << ver.getCoordinate(0) << " " << ver.getCoordinate(1) << " " << ver.getCoordinate(2) << endl;
         }
@@ -473,24 +474,24 @@ void FormanGradient::xx_vis_VPath_01(const string &vtkfile, const bool &scaled, 
 }
 
 void FormanGradient::xx_vis_VPath_12(const string &vtkfile, const bool &scaled, const bool &outdebugfile) {
-
-    std::vector<std::vector<implicitS>> vpaths;
-    for (const auto &cc_1: criticalS[1]) {  // critical 1-cells
+    std::vector<std::vector<implicitS> > vpaths;
+    for (const auto &cc_1: criticalS[1]) {
+        // critical 1-cells
         //cout<<"\ncheck saddle: "<< cc_1<<endl;
-        std::vector<std::vector<implicitS>> tmp_ps;
+        std::vector<std::vector<implicitS> > tmp_ps;
         saddle2max_vpaths(cc_1, tmp_ps);
         vpaths.insert(vpaths.end(), tmp_ps.begin(), tmp_ps.end());
     }
 
     std::cout << "\nvpaths#: " << vpaths.size() << endl;
 
-    // todo: write to vtk
+    // write to vtk
     ofstream ofs(vtkfile);
     ofs << fixed << setprecision(2);
     ofs << "# vtk DataFile Version 2.0\n"
-           "tm graph\n"
-           "ASCII\n"
-           "DATASET UNSTRUCTURED_GRID\n";
+            "tm graph\n"
+            "ASCII\n"
+            "DATASET UNSTRUCTURED_GRID\n";
 
     size_t pts_num = 0;
     size_t cell_num = 0;
@@ -510,7 +511,7 @@ void FormanGradient::xx_vis_VPath_12(const string &vtkfile, const bool &scaled, 
                 Vertex ver = sc.getVertex(vid);
                 if (scaled) {
                     ofs << ver.getCoordinate(0) - sc.sc_min_x << " " << ver.getCoordinate(1) - sc.sc_min_y << " "
-                        << ver.getCoordinate(2) << endl;
+                            << ver.getCoordinate(2) << endl;
                 } else {
                     ofs << ver.getCoordinate(0) << " " << ver.getCoordinate(1) << " " << ver.getCoordinate(2) << endl;
                 }
@@ -565,7 +566,6 @@ void FormanGradient::xx_vis_VPath_12(const string &vtkfile, const bool &scaled, 
     ofs.close();
 
     ofs.close();
-
 }
 
 void FormanGradient::xx_visMorse(const string &output_prefix) {
@@ -581,7 +581,6 @@ void FormanGradient::xx_visMorse(const string &output_prefix) {
 
                 computeAscendingCell(true, c, ascending);
                 ascending1manifold.push_back(ascending);
-
             }
         }
     }
@@ -591,13 +590,12 @@ void FormanGradient::xx_visMorse(const string &output_prefix) {
     outfile2 = output_prefix + "_ascending1cells.vtk";
     print_out(outfile1.c_str(), descending1manifold, 3, 2);
     accurate_asc1cells(ascending1manifold, outfile2);
-
 }
 
 void FormanGradient::xx_critical_cells_net_2d(const std::string &vtkfile, const std::string &txtfile) {
     std::map<implicitS, int> cps_map;
     int cp_id = 0;
-    std::vector<std::vector<int>> edges;
+    std::vector<std::vector<int> > edges;
     for (const auto &s: criticalS[1]) {
         cps_map[s] = cp_id;
         cp_id = cp_id + 1;
@@ -641,9 +639,9 @@ void FormanGradient::xx_critical_cells_net_2d(const std::string &vtkfile, const 
     ofstream ofs(vtkfile);
     ofs << fixed << setprecision(3);
     ofs << "# vtk DataFile Version 2.0\n"
-           "critical cells\n"
-           "ASCII\n"
-           "DATASET UNSTRUCTURED_GRID\n";
+            "critical cells\n"
+            "ASCII\n"
+            "DATASET UNSTRUCTURED_GRID\n";
     // points
     ofs << "POINTS " << pts_num << " float\n";
     for (const auto &c: cps) {
@@ -694,179 +692,11 @@ void FormanGradient::xx_critical_cells_net_2d(const std::string &vtkfile, const 
     for (const auto &c: cps) {
         Vertex v = sc.barycenter(c);
         ofs1 << v.getCoordinate(0) << " " << v.getCoordinate(1) << " " << v.getCoordinate(2) << " " << c.getDim()
-             << endl;
-
+                << endl;
     }
     // edges
     for (const auto &e: edges) {
         ofs1 << e[0] << " " << e[1] << endl;
     }
     ofs1.close();
-
-}
-
-void FormanGradient::writeVTK_gradient_2d(const string &vtkfile) {
-    // todo: check
-    // https://github.com/IuricichF/FormanGradient2D/blob/master/source/LibForman/io.cpp#L221
-
-    // point to find its paired edge
-    // edge to find its paired triangle or use triangle to find paired edge,
-    // as point and triangle are explictly encoded in IA?
-
-    cout << "\noutput gradient 2d\n";
-
-    std::vector<std::array<float, 3>> v_coords, v_gradients;
-    for (auto d: sc.getTopSimplexesSet()) {
-        cout << "dim: " << d << endl;
-    }
-    // check vertex -> edge
-    for (int ts_vid = 0; ts_vid < sc.getVerticesNum(); ++ts_vid) {
-        //for (auto ts: sc.getTopSimplices(0)) {
-        //int ts_vid = ts.getVertexIndex(0);
-        vector<float> ts_coords = sc.getVertex(ts_vid).getCoordinates();
-        v_coords.push_back({ts_coords[0], ts_coords[1], ts_coords[2]});
-
-        implicitS s(ts_vid);  // vertex simplex
-        implicitS next;
-        // find paired edge
-        if (getPair(s, next)) {
-            // need?
-            // assert(isPaired(next) && isPaired(s));  // double check
-            // get the other point on point
-            vector<int> next_vids = next.getConstVertices();
-            int tmp_vid = next_vids[0];
-            if (tmp_vid == ts_vid) {
-                tmp_vid = next_vids[1];
-            }
-            vector<float> tmp_coords = sc.getVertex(tmp_vid).getCoordinates();
-            float del_x, del_y, del_z;
-            del_x = tmp_coords[0] - ts_coords[0];
-            del_y = tmp_coords[1] - ts_coords[1];
-            del_z = tmp_coords[2] - ts_coords[2];
-            v_gradients.push_back({del_x, del_y, del_z});
-        } else { v_gradients.push_back({0.0, 0.0, 0.0}); }
-    }
-
-    // todo: edge to triangles
-    //  check the code.
-
-    // debug write vtk
-    size_t pts_num = v_gradients.size();
-    ofstream ofs(vtkfile);
-    ofs << fixed << setprecision(3);
-    ofs << "# vtk DataFile Version 2.0\n"
-           "critical cells\n"
-           "ASCII\n"
-           "DATASET UNSTRUCTURED_GRID\n";
-    // points
-    ofs << "POINTS " << pts_num << " float\n";
-    for (const auto &pt: v_coords) {
-        ofs << pt[0] << " " << pt[1] << " " << pt[2] << endl;
-    }
-
-    ofs << "POINT_DATA " << pts_num << endl;
-    ofs << "VECTORS vector float\n";
-    for (const auto &g: v_gradients) {
-        ofs << g[0] << " " << g[1] << " " << g[2] << endl;
-    }
-    ofs.close();
-}
-
-void FormanGradient::write_critical_persistence_2d(const std::string &outfile) {
-    // NOT ready to use.
-    cout << "\nwrite critical persistence infos\n";
-    std::map<implicitS, std::array<float, 2>> min_pers, saddle_pers, max_pers;
-    // mins
-    for (const auto &m: criticalS[0]) {
-        float val = sc.getVertex(m.getConstVertices()[0]).getCoordinate(2);
-        min_pers[m][0] = val;
-
-    }
-    // saddle to mins
-    for (const auto &saddle: criticalS[1]) {  // edge saddles
-        float tmp_val1, tmp_val2, val;
-        tmp_val1 = sc.getVertex(saddle.getConstVertices()[0]).getCoordinate(2);
-        tmp_val2 = sc.getVertex(saddle.getConstVertices()[1]).getCoordinate(2);
-        val = max(tmp_val1, tmp_val2);
-        vector<implicitS> minima;
-        saddle2minima(saddle, minima);
-        implicitS m1, m2;
-        m1 = minima[0];
-        m2 = minima[1];
-        min_pers[m1][1] = val;
-        min_pers[m2][1] = val;
-        saddle_pers[saddle][0] = val;
-
-    }
-
-    // note: 1 saddle -> 2 mins, 2 maxs
-    std::map<implicitS, int> s2nums;
-    // max to saddle
-    for (const auto &m: criticalS[2]) {  //
-        float tmp_val1, tmp_val2, tmp_val3, val;
-        tmp_val1 = sc.getVertex(m.getConstVertices()[0]).getCoordinate(2);
-        tmp_val2 = sc.getVertex(m.getConstVertices()[1]).getCoordinate(2);
-        tmp_val3 = sc.getVertex(m.getConstVertices()[2]).getCoordinate(2);
-        val = max(tmp_val1, tmp_val2);
-        val = max(val, tmp_val3);
-        vector<implicitS> saddles;
-        // todo: finish it
-        //max2saddle(m, saddles);
-        // debug: 1 max -> varied number of saddles
-        // cout << "matched critical saddles#: " << saddles.size() << endl;
-        //
-        for (const auto &s: saddles) {
-            saddle_pers[s][1] = val;
-            s2nums[s]++;
-        }
-        max_pers[m][0] = val;
-        max_pers[m][1] = sc.sc_max_z;
-    }
-
-
-    // todo: debug: check 1 saddle match to how many max. some saddle only found 1 max
-    cout << "check saddle -> max#. should be 2\n";
-    for (const auto &s: s2nums) {
-        implicitS tmp_s = s.first;
-        int tmp_num = s.second;
-        if (s.second != 2) {
-            cout << tmp_s << ": " << tmp_num << endl;
-        }
-    }
-    size_t s_num = saddle_pers.size();
-
-
-    // write output
-    // x1 y1 z1 x2 y2 z2 ... v1 v2
-    ofstream ofs(outfile);
-    ofs << fixed << setprecision(3);
-    ofs << min_pers.size() << " " << s_num << " " << max_pers.size() << endl;
-    for (const auto &k: min_pers) {
-        implicitS tmp_s = k.first;
-        std::vector<float> coords = sc.getVertex(tmp_s.getConstVertices()[0]).getCoordinates();
-        std::array<float, 2> tmp = k.second;
-        ofs << coords[0] << " " << coords[1] << " " << coords[2] << " " << tmp[0] << " " << tmp[1] << endl;
-    }
-    for (const auto &k: saddle_pers) {
-        implicitS tmp_s = k.first;
-        std::vector<float> coords1 = sc.getVertex(tmp_s.getConstVertices()[0]).getCoordinates();
-        std::vector<float> coords2 = sc.getVertex(tmp_s.getConstVertices()[1]).getCoordinates();
-        std::array<float, 2> tmp = k.second;
-        ofs << coords1[0] << " " << coords1[1] << " " << coords1[2] << " ";
-        ofs << coords2[0] << " " << coords2[1] << " " << coords2[2] << " ";
-        ofs << tmp[0] << " " << tmp[1] << endl;
-    }
-    for (const auto &k: max_pers) {
-        implicitS tmp_s = k.first;
-        std::vector<float> coords1 = sc.getVertex(tmp_s.getConstVertices()[0]).getCoordinates();
-        std::vector<float> coords2 = sc.getVertex(tmp_s.getConstVertices()[1]).getCoordinates();
-        std::vector<float> coords3 = sc.getVertex(tmp_s.getConstVertices()[2]).getCoordinates();
-
-        ofs << coords1[0] << " " << coords1[1] << " " << coords1[2] << " ";
-        ofs << coords2[0] << " " << coords2[1] << " " << coords2[2] << " ";
-        ofs << coords3[0] << " " << coords3[1] << " " << coords3[2] << " ";
-        std::array<float, 2> tmp = k.second;
-        ofs << tmp[0] << " " << tmp[1] << endl;
-    }
-    ofs.close();
 }

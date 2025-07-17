@@ -109,14 +109,14 @@ void FormanGradient::computeFormanGradient(bool computeTopsByBatch) {
 
     time.start();
     if (computeTopsByBatch) {
-        sc.storeFullStar();
+        sc.storeFullStar(); // todo: parallelize it?
     }
     time.stop();
 
     cout << "Tops computed " << time.getElapsedTime() << " s" << endl;
 
-    map<pair<int, int>, SSet> filtrationAll; // <- seems used to debug
-    auto foo = bind(&FormanGradient::cmpSimplexesFiltr, this, boost::placeholders::_1, boost::placeholders::_2);
+    //map<pair<int, int>, SSet> filtrationAll; // <- seems used to debug
+    //auto foo = bind(&FormanGradient::cmpSimplexesFiltr, this, boost::placeholders::_1, boost::placeholders::_2);
     time.start();
 
 #pragma omp parallel for num_threads(6)
@@ -135,19 +135,20 @@ void FormanGradient::computeFormanGradient(bool computeTopsByBatch) {
             // uncomment here for old software
             homotopy_expansion(lw); // critical cells generated here
 
-            for (auto s: lw) {
-                // the code more likes a debug. todo: remove?
-                vector<uint> filtr = this->simplexFiltration(s);
-                pair<int, int> filrNew(filtr[0], filtr[1]);
-                if (filtrationAll.find(filrNew) == filtrationAll.end()) filtrationAll[filrNew] = SSet(foo);
-                filtrationAll[filrNew].insert(s);
-            }
+            // debug
+            // for (auto s: lw) {
+            //     // the code more likes a debug. todo: remove
+            //     vector<uint> filtr = this->simplexFiltration(s);
+            //     pair<int, int> filrNew(filtr[0], filtr[1]);
+            //     if (filtrationAll.find(filrNew) == filtrationAll.end()) filtrationAll[filrNew] = SSet(foo);
+            //     filtrationAll[filrNew].insert(s);
+            // }
         }
     }
     time.stop();
     cout << "Forman gradient computed " << time.getElapsedTime() << " s" << endl;
 
-    // Ciccio said: here I was trying to print out everything for rivet
+    // here I was trying to print out everything for rivet
     // fstream fStream("complexRivet.txt", ios::out);
     //    fStream << "bifiltration" << endl;
     //    fStream << "f1" << endl;
@@ -236,7 +237,6 @@ void FormanGradient::homotopy_expansion(SSet &simplexes) {
                     if (nmPairable) {
                         // cout << "prima di pair con " << nextPair << endl;
                         setPair(s, nextPair);
-                        // xx: nextPair is at the boundary of s?
 
                         sdiv[d - 1].erase(nextPair);
                         toRemove.push_back(s);
@@ -409,20 +409,6 @@ void FormanGradient::freePair(const implicitS &next, const implicitS &pair) {
 bool FormanGradient::getPair(const implicitS &next, implicitS &pair) {
     vector<explicitS> *tops = sc.topStar(next);
 
-    //    // debug
-    //    cout<< "tops:\n";
-    //    for(auto s: *tops){
-    //        cout << s <<": ";
-    //        sc.getTopSimplex(s).print_debug();
-    //        cout << "\e[A"; //remove newline,
-    //        https://stackoverflow.com/questions/3277058/how-to-rollback-lines-from-cout bool
-    //        res=gradient.getPair(next,pair,s,sc); if(!pair.getConstVertices().empty()) {
-    //            cout << "try paired with: " << pair << ", res = " << res << endl;
-    //        } else{
-    //            cout << "not paired, res = "<< res<<endl;
-    //        }
-    //    }
-
     // original
     for (auto s: *tops) {
         if (gradient.getPair(next, pair, s, sc)) {
@@ -485,7 +471,7 @@ SSet *FormanGradient::vertexLowerStar(uint vert, uint dimension) {
     return ret;
 }
 
-// xx:
+
 void FormanGradient::saddle2minima(implicitS const &saddle, vector<implicitS> &minima) {
     assert(saddle.getConstVertices().size() == 2); // ensure cell is an edge
 
@@ -496,7 +482,6 @@ void FormanGradient::saddle2minima(implicitS const &saddle, vector<implicitS> &m
         implicitS next;
         // start from its vertex
         if (getPair(s, next)) {
-            // fixme: do we need to "assert" here? It seems costly
             assert(isPaired(next) && isPaired(s)); // double check
 
             stack<implicitS> st_pairs;
@@ -569,68 +554,6 @@ void FormanGradient::saddle2maxima(const implicitS &saddle, vector<implicitS> &m
     }
 }
 
-void FormanGradient::critical_tri2tetras(implicitS const &tri, vector<implicitS> &tetras) {
-    // todo: maybe some problems here. need to fix first!
-
-    // cout << "\nprocess: " << tri << endl;
-    set<implicitS> con_tetras;
-    assert(tri.getConstVertices().size() == 3);
-    stack<implicitS> qu;
-    qu.push(tri);
-    while (!qu.empty()) {
-        implicitS top = qu.top();
-        qu.pop();
-        vector<implicitS> *bd = sc.coboundaryk(top, top.getDim() + 1);
-        for (const auto &s: *bd) {
-            implicitS next;
-            if (getPair(s, next)) {
-                assert(isPaired(next) && isPaired(s));
-                if (next.getDim() == tri.getDim() && !sc.theSame(next, top)) {
-                    qu.push(next);
-                }
-            } else {
-                // cout << "-> " << s << " Critical vs " << (criticalS[3].find(s) != criticalS[3].end()) << endl;
-                assert(criticalS[3].find(s) != criticalS[3].end()); // ensure it is critical tetra
-                con_tetras.insert(s);
-            }
-        }
-        delete bd;
-    }
-    // cout << "# of connected critical cells: " << con_tetras.size() << endl;
-    for (const auto &tt: con_tetras) {
-        tetras.push_back(tt);
-    }
-}
-
-void FormanGradient::critical_tetra2tris(const implicitS &tetra, vector<implicitS> &tris) {
-    set<implicitS> con_tris;
-    assert(tetra.getConstVertices().size() == 4);
-    stack<implicitS> qu;
-    qu.push(tetra);
-    while (!qu.empty()) {
-        implicitS top = qu.top();
-        qu.pop();
-        vector<implicitS> *bd = sc.boundaryk(top, top.getDim() - 1);
-        for (const auto &s: *bd) {
-            implicitS next;
-            if (getPair(s, next)) {
-                assert(isPaired(next) && isPaired(s));
-                if (next.getDim() == tetra.getDim() && !sc.theSame(next, top)) {
-                    qu.push(next);
-                }
-            } else {
-                // cout << "-> " << s << " Critical vs " << (criticalS[2].find(s) != criticalS[2].end()) << endl;
-                con_tris.insert(s);
-            }
-        }
-        delete bd;
-    }
-    // cout << "# of connected critical cells: " << con_tris.size() << endl;
-
-    for (const auto &tri: con_tris) {
-        tris.push_back(tri);
-    }
-}
 
 void FormanGradient::saddle2min_vpaths(const implicitS &saddle, std::vector<std::vector<int> > &vpaths) {
     for (int i = 0; i < 2; ++i) {
@@ -681,9 +604,6 @@ void FormanGradient::saddle2min_vpaths(const implicitS &saddle, std::vector<std:
 
 void FormanGradient::saddle2max_vpaths(implicitS const &saddle, std::vector<std::vector<implicitS> > &vpaths) {
     // todo: check this code.
-    // in 2d case, 1 max -> ?? saddles?
-    // 1 saddle -> 2 max.
-
     // vpath: edge-triangle-edge-triangles....
 
     //cout << "input saddle: " << saddle << endl;
