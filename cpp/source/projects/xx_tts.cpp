@@ -122,7 +122,7 @@ int extract_single_trees(const string& vg_mesh_file, const string& loc_file, str
 
     cout << "\nlabel pts\n";
     timer.start();
-    //outfile = ts.label_pts_from_mins(true); // todo: add write file function.
+    //outfile = ts.label_pts_from_mins(true); 
     outfile = ts.label_pts_from_mins_parallel(true);
     timer.stop();
     cout << "label time: " << timer.getElapsedTimeInSec() << " s\n";

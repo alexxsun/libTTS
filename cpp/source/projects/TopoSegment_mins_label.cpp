@@ -83,10 +83,6 @@ int TopoSegment::initSeeds_mins_by_trunkpts_xyz(
         _min2lbl[all_mins[i]] = -1 - i;
     }
 
-    // // read seed pts (x,y, ...) from seed_file
-    // std::vector<std::vector<float> > seeds_pts;
-    // tts_read_pts_fs(seed_file, seeds_pts);
-
     std::map<int, std::set<std::array<float, 3> > > trunk_pts; // todo: use seed2pids.
     for (const auto& pt : seeds_pts) {
         std::array<float, 3> tmp_xyz = {pt[0], pt[1], pt[2]};
@@ -94,8 +90,7 @@ int TopoSegment::initSeeds_mins_by_trunkpts_xyz(
         trunk_pts[tmp_l].insert(tmp_xyz);
     }
     if (trunk_pts.empty()) {
-        cout << "no trunk provided. use alpha shape components as default\n";
-        return 1; // something wrong
+        throw std::runtime_error("no trunk pts found");
     }
     if (_showlog)
         std::cout << "seeds #: " << trunk_pts.size() << std::endl;
@@ -146,14 +141,8 @@ int TopoSegment::initSeeds_mins_by_trunkpts_xyz(
         int bst_trunk_lbl = 0;
         float tmp_min_dis_sq = std::numeric_limits<float>::max(); //init dis. large
         for (const auto& tmp_tloc : trunk_pts) {
-            // check trunk first
-            // valid seed/trunk: length >= 2.0m.
-            // min.z need to be [trunk.zmin, trunk.zmax]
             int tmp_trunk_id = tmp_tloc.first;
             std::array<float, 4> t_infos = trunk_infos[tmp_trunk_id]; // (cx, cy, zmin, zmax)
-            // no need to consider the trunk length now.
-            // if ((t_infos[3] - t_infos[2]) < 2.0) { continue; }
-            // min.z need to be [trunk.zmin, trunk.zmax]
             if ((v_coords[2] > t_infos[3]) || (v_coords[2] < t_infos[2])) {
                 continue;
             }
@@ -282,7 +271,6 @@ int TopoSegment::growFromSeeds_mins_basic() {
 
             bool min_grows = false; // does this seed grow?
             int tmp_lbl = _min2lbl[seed_min];
-            //std::array<float, 4> tmp_trunk_info = trunk_infos.at(tmp_lbl);
             for (const auto& nbh : min2mins[seed_min]) {
                 int nbh_lbl = _min2lbl[nbh];
                 if (nbh_lbl < 0) {
@@ -384,27 +372,6 @@ string TopoSegment::label_pts_from_mins_parallel(const bool& output) {
         cout << "\nlabel points\n";
     // init
     _pts_lbls = std::vector<int>(sc.getVerticesNum(), 0);
-
-    // label pts
-    // for (const auto &ml: _min2lbl) {
-    //     implicitS cc = ml.first;
-    //     int lbl = ml.second;
-    //     SSet tmp_cells;
-    //     computeAscendingCell(true, cc, tmp_cells);
-    //     // label points in the ascending/descending cells
-    //     for (const auto &ac: tmp_cells) {
-    //         for (const auto &vid: ac.getConstVertices()) {
-    //             if (_pts_lbls[vid] > 0) {
-    //                 int old_lbl = _pts_lbls[vid];
-    //                 if (old_lbl != lbl) {
-    //                     _pts_lbls[vid] = 0; //  point is labeled at least twice
-    //                 }
-    //             } else {
-    //                 _pts_lbls[vid] = lbl;
-    //             }
-    //         }
-    //     }
-    // }
 
     // Convert map to vector for better parallel iteration
     std::vector<std::pair<implicitS, int> > min2lbl_vec(_min2lbl.begin(), _min2lbl.end());

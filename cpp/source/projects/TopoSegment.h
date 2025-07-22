@@ -158,7 +158,7 @@ public:
     }
 
     // initial min seeds are components of low-heights from input alpha shape
-    // not suggested. keep here for the original paper.
+    // not suggested.
     int initSeeds_mins_by_as();
 
     // init min labels from locations in 3D space.
@@ -221,10 +221,12 @@ public:
         }
 
         // debug
-        std::cout << "pts#: " << ret_pts.size() << endl;
-        if (!ret_pts.empty()) {
-            std::cout << ret_pts[0][0] << " " << ret_pts[0][1] << " " << ret_pts[0][2] << " " <<
-                ret_pts[0][3] << "\n";
+        if (_showlog) {
+            std::cout << "pts#: " << ret_pts.size() << endl;
+            if (!ret_pts.empty()) {
+                std::cout << ret_pts[0][0] << " " << ret_pts[0][1] << " " << ret_pts[0][2] << " " <<
+                    ret_pts[0][3] << "\n";
+            }
         }
         return 0; // everything goes well
     }
