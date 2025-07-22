@@ -2,17 +2,14 @@
 // Created by alex on 1/8/25.
 //
 
-
+#include <filesystem>
 #include "xx_tts.h"
 #include "cgal_fixed_alphashape_v2.h"
 #include "TopoSegment.h"
-#include <filesystem>
-
-//#include <cstdio>
 
 // get directory
-string get_directory(const string &in_path) {
-    // get absolute path
+string get_directory(const string& in_path) {
+    // get the absolute path
     std::filesystem::path path = std::filesystem::absolute(in_path);
 
     // return the parent path as a string
@@ -20,7 +17,7 @@ string get_directory(const string &in_path) {
 }
 
 // get filename
-string get_filename(const string &in_path) {
+string get_filename(const string& in_path) {
     // create a path object
     std::filesystem::path path(in_path);
 
@@ -28,7 +25,7 @@ string get_filename(const string &in_path) {
     return path.filename().string();
 }
 
-int alpha_shape_generation(const string &infile, const double &alpha_sq_value, string &outfile) {
+int alpha_shape_generation(const string& infile, const double& alpha_sq_value, string& outfile) {
     string format = "off";
 
     if (outfile.empty()) {
@@ -37,7 +34,7 @@ int alpha_shape_generation(const string &infile, const double &alpha_sq_value, s
         }
         std::stringstream ss;
         ss << std::filesystem::path(infile).stem().string()
-                << "_a" << std::fixed << std::setprecision(3) << alpha_sq_value << "." << format;
+            << "_a" << std::fixed << std::setprecision(3) << alpha_sq_value << "." << format;
         outfile = (std::filesystem::path(infile).parent_path() / ss.str()).string();
     } else {
         if (outfile.find(".ply") != string::npos) {
@@ -46,31 +43,29 @@ int alpha_shape_generation(const string &infile, const double &alpha_sq_value, s
     }
     generate_fixed_alpha_shape_only_v2(infile, alpha_sq_value, outfile, format);
 
-
     return 1;
 }
 
-int alpha_shape_segment(const string &infile,
-                        const double &alpha_sq_value,
-                        string &outdir) {
+int alpha_shape_segment(const string& infile,
+                        const double& alpha_sq_value,
+                        string& outdir) {
     string format = "off";
     if (infile.find(".ply") != string::npos) {
         format = "ply";
     }
     std::stringstream ss;
     ss << std::filesystem::path(infile).stem().string()
-            << "_a" << std::fixed << std::setprecision(3) << alpha_sq_value << "." << format;
+        << "_a" << std::fixed << std::setprecision(3) << alpha_sq_value << "." << format;
     //string outfile = (std::filesystem::path(infile).parent_path() / ss.str()).string();
-    string outfile = "";
+    string outfile = ""; // we don't output entire alpha shape here
 
     ss.str("");
     ss.clear();
     ss << std::filesystem::path(infile).stem().string()
-            << "_a" << std::fixed << std::setprecision(3) << alpha_sq_value << "_components";
+        << "_a" << std::fixed << std::setprecision(3) << alpha_sq_value << "_components";
     if (outdir.empty()) {
         outdir = (std::filesystem::path(infile).parent_path() / ss.str()).string();
     }
-    //std::cout << "out file: " << outdir << "\n";
     std::cout << "out dir: " << outdir << "\n";
     // create outdir
     std::filesystem::path dir_path(outdir);
@@ -81,27 +76,22 @@ int alpha_shape_segment(const string &infile,
     std::cout << "Creating directory '" << dir_path << "'." << std::endl;
     std::filesystem::create_directories(dir_path);
 
+    //
     generate_fixed_alpha_shape_v2(infile, alpha_sq_value, outfile, outdir, format);
     return 1;
 }
 
-int get_oversegments(const string &infile, string &out_segfile) {
+int get_oversegments(const string& infile, string& out_segfile) {
     /*
     * input: alpa shape component alpha shape (i.e., .off) file
-    * input parameter:
     */
-
-    string workspace = get_directory(infile);
-    string filename = get_filename(infile);
-    cout << "workspace: " << workspace << endl;
-    cout << "filename: " << filename << endl;
 
     IO_Timer timer;
     timer.start();
     // get over-segmentation results
     TopoSegment ts(infile, 3, false);
 
-    // out_segfile: xx_lbl.pts
+    // out_segfile: xx_lbl.pts/.ply
     ts.cluster(out_segfile);
 
     timer.stop();
@@ -110,9 +100,9 @@ int get_oversegments(const string &infile, string &out_segfile) {
     return 1;
 }
 
-int extract_single_trees(const string &vg_mesh_file, const string &loc_file, string &outfile,
-                         const double &th_p2trunk_distance,
-                         const double &th_search_radius) {
+int extract_single_trees(const string& vg_mesh_file, const string& loc_file, string& outfile,
+                         const double& th_p2trunk_distance,
+                         const double& th_search_radius) {
     // infile: alpha shape file
 
     // extract single trees

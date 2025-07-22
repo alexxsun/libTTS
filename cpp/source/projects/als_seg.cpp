@@ -14,8 +14,8 @@ using namespace std;
 
 bool xx_debug = false;
 
-int als_segment(const string &infile, double th_radius, double th_forest_pers, double th_height, bool th_height_funtype,
-            double th_pers_H, double th_pers_I, const string &ds) {
+int als_segment(const string& infile, double th_radius, double th_forest_pers, double th_height, bool th_height_funtype,
+                double th_pers_H, double th_pers_I, const string& ds) {
     /*
      * Input:
      * infile: pts file
@@ -70,7 +70,7 @@ int als_segment(const string &infile, double th_radius, double th_forest_pers, d
     pts_lbls_H = vector<int>(points.size(), -1); // init segment, which is the return value
     pts_lbls_I = vector<int>(points.size(), -1); // init segment, which is the return value
     th_height = th_height < 0 ? 0.5 : th_height;
-    for (const auto &tc: tree_clusters) {
+    for (const auto& tc : tree_clusters) {
         vector<int> tc_pids = tc.second;
         vector<vector<int> > tc_VV;
         double zmin, zmax;
@@ -99,7 +99,6 @@ int als_segment(const string &infile, double th_radius, double th_forest_pers, d
         cout << "post-process results\n";
     }
 
-
     string outfile = infile.substr(0, infile.size() - 4) + "_lbls.pts";
     output_labeled_pts(points, pts_lbls, outfile);
     cout << "write: " << outfile << endl;
@@ -107,14 +106,14 @@ int als_segment(const string &infile, double th_radius, double th_forest_pers, d
     return 0;
 }
 
-template<typename T>
-void xx_str2vector(const string &str, vector<T> &vec) {
+template <typename T>
+void xx_str2vector(const string& str, vector<T>& vec) {
     istringstream iss(str);
     // https://stackoverflow.com/questions/9986091/how-do-you-convert-a-string-into-an-array-of-doubles
     std::copy(std::istream_iterator<T>(iss), std::istream_iterator<T>(), std::back_inserter(vec));
 }
 
-int read_points(const string &ptsfile, vector<vector<double> > &pts) {
+int read_points(const string& ptsfile, vector<vector<double> >& pts) {
     ifstream ifs(ptsfile);
     string line;
     while (getline(ifs, line)) {
@@ -126,8 +125,8 @@ int read_points(const string &ptsfile, vector<vector<double> > &pts) {
     return 1;
 }
 
-int connect_projected_pts(const vector<vector<double> > &pts, double &Radius, vector<double> &density,
-                          vector<vector<int> > &VV) {
+int connect_projected_pts(const vector<vector<double> >& pts, double& Radius, vector<double>& density,
+                          vector<vector<int> >& VV) {
     /* Inputs:
      * pts: all points
      * Outputs:
@@ -137,11 +136,11 @@ int connect_projected_pts(const vector<vector<double> > &pts, double &Radius, ve
      */
     // generate a graph of points projected on the ground
     // todo: delete ann pointers?
-    typedef ANNcoord *ANNpoint;
-    typedef ANNpoint *ANNpointArray;
-    typedef ANNdist *ANNdistArray;
+    typedef ANNcoord* ANNpoint;
+    typedef ANNpoint* ANNpointArray;
+    typedef ANNdist* ANNdistArray;
 
-    typedef ANNidx *ANNidxArray;
+    typedef ANNidx* ANNidxArray;
 
     int vertexNumber = pts.size();
     ANNpointArray dataPts = annAllocPts(vertexNumber, 2);
@@ -152,7 +151,7 @@ int connect_projected_pts(const vector<vector<double> > &pts, double &Radius, ve
         dataPts[i] = newPt;
     }
 
-    ANNkd_tree *kdTree = new ANNkd_tree(dataPts, vertexNumber, 2);
+    ANNkd_tree* kdTree = new ANNkd_tree(dataPts, vertexNumber, 2);
 
     // search a good radius for the search
     if (Radius <= 0) {
@@ -176,11 +175,11 @@ int connect_projected_pts(const vector<vector<double> > &pts, double &Radius, ve
                 queryPt[1] = pts[i][1];
                 ANNidxArray ids = new ANNidx[0];
                 ANNdistArray dists = new ANNdist[0];
-                ANNdist dist = (double) pow(Radius, 2);
+                ANNdist dist = (double)pow(Radius, 2);
                 int knn = kdTree->annkFRSearch(queryPt, dist, 0, ids, dists, 0.0);
-                avgVV += (double) knn;
+                avgVV += (double)knn;
             }
-            avgVV = avgVV / (double) vertexNumber;
+            avgVV = avgVV / (double)vertexNumber;
             if (avgVV < 70) {
                 Radius = Radius + 0.1;
             } else {
@@ -208,7 +207,7 @@ int connect_projected_pts(const vector<vector<double> > &pts, double &Radius, ve
         density[i] = pts[i][2]; // init density as height z
         ANNidxArray ids = new ANNidx[0];
         ANNdistArray dists = new ANNdist[0];
-        ANNdist dist = (double) pow(Radius, 2);
+        ANNdist dist = (double)pow(Radius, 2);
         int knn = kdTree->annkFRSearch(queryPt, dist, 0, ids, dists, 0.0);
         ids = new ANNidx[knn];
         dists = new ANNdist[knn];
@@ -224,7 +223,7 @@ int connect_projected_pts(const vector<vector<double> > &pts, double &Radius, ve
     // debug: find average number of neighbor
     if (Radius > 0) {
         double avg_nbr_num = 0;
-        for (const auto &nbrs: VV) {
+        for (const auto& nbrs : VV) {
             avg_nbr_num = avg_nbr_num + nbrs.size();
         }
         avg_nbr_num = avg_nbr_num / VV.size();
@@ -235,10 +234,10 @@ int connect_projected_pts(const vector<vector<double> > &pts, double &Radius, ve
     for (int i = 0; i < 10; i++) {
         vector<double> newDensity(vertexNumber, 0);
         for (int j = 0; j < vertexNumber; j++) {
-            for (auto v: VV[j]) {
+            for (auto v : VV[j]) {
                 newDensity[j] += density[v];
             }
-            newDensity[j] /= (double) VV[j].size();
+            newDensity[j] /= (double)VV[j].size();
         }
         density = newDensity;
     }
@@ -250,8 +249,8 @@ int connect_projected_pts(const vector<vector<double> > &pts, double &Radius, ve
     return 1;
 }
 
-int segment_forest(const double &perc_pers, const vector<double> &density, vector<vector<int> > &VV,
-                   vector<int> &pts_lbls, map<int, vector<int> > &tree_clusters) {
+int segment_forest(const double& perc_pers, const vector<double>& density, vector<vector<int> >& VV,
+                   vector<int>& pts_lbls, map<int, vector<int> >& tree_clusters) {
     /*
      * given the graph of 2D points, segment the graph based on the watershed.
      * Inputs:
@@ -285,12 +284,12 @@ int segment_forest(const double &perc_pers, const vector<double> &density, vecto
 
     // label points by simulated immersion based watershed
     int new_labels = 0; // valid label starts from 0. it must be from 0
-    for (auto v: sorted_vertices) {
+    for (auto v : sorted_vertices) {
         int i = v.second; // current vid
         int count = 0;
         int steepest = -1; // vid with the lowest value
         std::set<int> adj_lbls;
-        for (auto nv: VV[i]) {
+        for (auto nv : VV[i]) {
             if (labels[nv] > -1) {
                 // adjacent vertex is already labeled
                 count++;
@@ -336,8 +335,8 @@ int segment_forest(const double &perc_pers, const vector<double> &density, vecto
     // xx: set the queue item to: persistence_value, v1,v2, commonV
     //  add the commonV to correct find the commonV when to merge regions
     priority_queue<pair<double, std::array<int, 3> >, vector<pair<double, std::array<int, 3> > >,
-                std::greater<pair<double, std::array<int, 3> > > >
-            queue;
+                   std::greater<pair<double, std::array<int, 3> > > >
+        queue;
 
     // persistence based simplification/merge
     for (int i = 0; i < totVertices; i++) {
@@ -346,7 +345,7 @@ int segment_forest(const double &perc_pers, const vector<double> &density, vecto
             double z;
             z = density[i]; // get the value (it is the negative smoothed height) of vertex i
             vector<int> allAdjacent; // adjacent labeled points, (lbl>-1)
-            for (auto v: VV[i]) {
+            for (auto v : VV[i]) {
                 if (labels[v] > -1) {
                     // adjacent vertices is labeled.
                     allAdjacent.push_back(v);
@@ -471,7 +470,7 @@ int segment_forest(const double &perc_pers, const vector<double> &density, vecto
                 }
                 // update labels, and region's vertices
                 // cout << labels[v1] << ", " << labels[v2] << " -> ";
-                for (auto v: regionsToVertices[dominated]) {
+                for (auto v : regionsToVertices[dominated]) {
                     labels[v] = dominating;
                 }
                 // cout << labels[v1] << ", " << labels[v2] << " \n";
@@ -501,7 +500,7 @@ int segment_forest(const double &perc_pers, const vector<double> &density, vecto
             if (!t.empty()) {
                 tc_num = tc_num + 1;
             }
-            for (const auto &vid: t) {
+            for (const auto& vid : t) {
                 int l = labels[vid];
                 if (l != i) {
                     cout << "label is not matched\n";
@@ -525,7 +524,7 @@ int segment_forest(const double &perc_pers, const vector<double> &density, vecto
 
         if (tc_num != unique_valid_lbls.size()) {
             cout << "after merge, final survived labels\n";
-            for (const auto &l: unique_valid_lbls) {
+            for (const auto& l : unique_valid_lbls) {
                 cout << l << " ";
             }
             cout << endl;
@@ -543,7 +542,7 @@ int segment_forest(const double &perc_pers, const vector<double> &density, vecto
         if (labels[i] == -2) {
             std::set<int> adj_lbls;
             int tmp_lbl = -1;
-            for (auto v: VV[i]) {
+            for (auto v : VV[i]) {
                 if (labels[v] > -1) {
                     adj_lbls.insert(labels[v]);
                     tmp_lbl = labels[v];
@@ -597,8 +596,8 @@ int segment_forest(const double &perc_pers, const vector<double> &density, vecto
     return 0;
 }
 
-int compute_cylinder(double &th_height, const double &radius, const vector<vector<double> > &pts,
-                     const vector<int> &pids, vector<vector<int> > &VV, double &zmin, double &zmax) {
+int compute_cylinder(double& th_height, const double& radius, const vector<vector<double> >& pts,
+                     const vector<int>& pids, vector<vector<int> >& VV, double& zmin, double& zmax) {
     /*
      * connect 3D points to generate VV relationship
      * for each point, the search cylinder is build with the radius. extrude the cylinder from the point. (direction up)
@@ -649,9 +648,9 @@ int compute_cylinder(double &th_height, const double &radius, const vector<vecto
     zmin = minz;
     vector<double> heights = vector<double>(sort_by_height.size()); // unique heights
     vector<vector<int> > vertices_h =
-            vector<vector<int> >(sort_by_height.size()); // the vertex ids. in the same order with heights
+        vector<vector<int> >(sort_by_height.size()); // the vertex ids. in the same order with heights
     int i = 0;
-    for (auto val: sort_by_height) {
+    for (auto val : sort_by_height) {
         // height: local vids
         heights[i] = val.first;
         vertices_h[i++] = val.second;
@@ -666,10 +665,10 @@ int compute_cylinder(double &th_height, const double &radius, const vector<vecto
 
     // connect VV
     for (int index = 0; index < heights.size(); index++) {
-        for (auto v: vertices_h[index]) {
+        for (auto v : vertices_h[index]) {
             // note: here are local vids
             for (int up = index; up < heights.size(); up++) {
-                for (auto v2: vertices_h[up]) {
+                for (auto v2 : vertices_h[up]) {
                     // note: here are local vids
                     if (v != v2) {
                         double x, y, z, x2, y2, z2;
@@ -700,9 +699,9 @@ int compute_cylinder(double &th_height, const double &radius, const vector<vecto
     return 0;
 }
 
-int segment_cluster(const vector<vector<double> > &pts, const double &zmin, const double &zmax,
-                    const vector<int> &vertices, const vector<vector<int> > &VV, const bool &height_funtype,
-                    const double &perc_pers, vector<int> &pts_lbls, int &regionN) {
+int segment_cluster(const vector<vector<double> >& pts, const double& zmin, const double& zmax,
+                    const vector<int>& vertices, const vector<vector<int> >& VV, const bool& height_funtype,
+                    const double& perc_pers, vector<int>& pts_lbls, int& regionN) {
     /*
      * given the graph of 3D point of cluster points here, segment results
      * Inputs:
@@ -745,12 +744,12 @@ int segment_cluster(const vector<vector<double> > &pts, const double &zmin, cons
     std::sort(sorted_vertices.begin(), sorted_vertices.end());
 
     int new_labels = 0; // label starts from 0.
-    for (auto v: sorted_vertices) {
+    for (auto v : sorted_vertices) {
         int i = v.second;
         int count = 0;
         int steepest = -1;
         std::set<int> adj_lbls;
-        for (auto nv: VV[i]) {
+        for (auto nv : VV[i]) {
             if (labels[nv] > -1) {
                 count++;
                 steepest = nv;
@@ -782,8 +781,8 @@ int segment_cluster(const vector<vector<double> > &pts, const double &zmin, cons
      */
     // xx's fix: persistence value: {v1, v2, commonv}
     priority_queue<pair<double, std::array<int, 3> >, vector<pair<double, std::array<int, 3> > >,
-                std::greater<pair<double, std::array<int, 3> > > >
-            queue;
+                   std::greater<pair<double, std::array<int, 3> > > >
+        queue;
 
     for (int i = 0; i < totVertices; i++) {
         if (labels[i] == -2) {
@@ -796,7 +795,7 @@ int segment_cluster(const vector<vector<double> > &pts, const double &zmin, cons
             if (!height_funtype) {
                 z = -z;
             }
-            for (auto v: VV[i]) {
+            for (auto v : VV[i]) {
                 // note: vv has local pids
                 if (labels[v] > -1) {
                     // points are labeled
@@ -893,7 +892,7 @@ int segment_cluster(const vector<vector<double> > &pts, const double &zmin, cons
                     dominating = l1;
                     dominated = l2;
                 }
-                for (auto v: regionsToVertices[dominated]) {
+                for (auto v : regionsToVertices[dominated]) {
                     labels[v] = dominating;
                 }
                 regionsToVertices[dominating].insert(regionsToVertices[dominating].begin(),
@@ -929,7 +928,7 @@ int segment_cluster(const vector<vector<double> > &pts, const double &zmin, cons
         if (labels[i] == -2) {
             std::set<int> adj_lbls;
             int tmp_lbl = -1;
-            for (auto v: VV[i]) {
+            for (auto v : VV[i]) {
                 if (labels[v] > -1) {
                     adj_lbls.insert(labels[v]);
                     tmp_lbl = labels[v];
@@ -945,7 +944,7 @@ int segment_cluster(const vector<vector<double> > &pts, const double &zmin, cons
     // xx's update: keep boundary points (as label these points -2)
     int newIRegion = regionN;
     map<int, int> newLabels; // old label to new label
-    for (auto l: labels) {
+    for (auto l : labels) {
         if (l == -2) {
             // keep boundary
             newLabels[l] = -2;
@@ -962,7 +961,7 @@ int segment_cluster(const vector<vector<double> > &pts, const double &zmin, cons
     return 0;
 }
 
-int merge_labels(const vector<int> &lbls1, const vector<int> &lbls2, vector<int> &lbls, int &trees_num) {
+int merge_labels(const vector<int>& lbls1, const vector<int>& lbls2, vector<int>& lbls, int& trees_num) {
     /*
      * lbls: point labels.
      */
@@ -990,7 +989,7 @@ int merge_labels(const vector<int> &lbls1, const vector<int> &lbls2, vector<int>
     return 1;
 }
 
-int post_process(vector<int> &pts_lbls, const int &trees_num, const string &ds = "newfor") {
+int post_process(vector<int>& pts_lbls, const int& trees_num, const string& ds = "newfor") {
     /* remove tiny segmentation results
      *
      */
@@ -1015,7 +1014,7 @@ int post_process(vector<int> &pts_lbls, const int &trees_num, const string &ds =
             maxSize = total_regions[i];
         }
     }
-    avgSize /= (float) total_regions.size();
+    avgSize /= (float)total_regions.size();
     if (xx_debug) {
         cout << "tree pts average size: " << avgSize << " and max size: " << maxSize << endl;
     }
@@ -1031,7 +1030,7 @@ int post_process(vector<int> &pts_lbls, const int &trees_num, const string &ds =
     double thSize = 0;
 
     int xx_count = 0;
-    for (auto ts: treeSizes) {
+    for (auto ts : treeSizes) {
         if (ts >= avgSize) {
             thSize = thSize + ts;
             xx_count++;
@@ -1059,7 +1058,7 @@ int post_process(vector<int> &pts_lbls, const int &trees_num, const string &ds =
         if (pts_lbls[i] < 0) {
             continue;
         }
-        if ((double) total_regions[pts_lbls[i]] < thSize) {
+        if ((double)total_regions[pts_lbls[i]] < thSize) {
             // avgSize
             pts_lbls[i] = -1;
         }
@@ -1089,7 +1088,7 @@ int post_process(vector<int> &pts_lbls, const int &trees_num, const string &ds =
     return 1;
 }
 
-void output_labeled_pts(vector<vector<double> > &points, vector<int> &pts_lbls, const string &outfile) {
+void output_labeled_pts(vector<vector<double> >& points, vector<int>& pts_lbls, const string& outfile) {
     /*
      * output labeled points
      * x y z lbl1 lbl2

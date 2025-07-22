@@ -151,6 +151,8 @@ def label_points_region_growing(points, labeled_seed_points, search_radius=0.5, 
                 
     print("Z-Ordered Region Growing complete.")
     
+    # todo: support .ply 
+    
     # If an output file is specified, save the labels: xyzl
     if out_file is not None:
         np.savetxt(out_file, np.column_stack((points, propagated_labels)), fmt=['%.3f', '%.3f', '%.3f', '%d'], delimiter=' ')

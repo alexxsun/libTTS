@@ -1,0 +1,59 @@
+# This is a .clang-format file. Place it in the root of your cpp/ directory.
+# It is based on the Google C++ Style Guide with some common adjustments.
+
+# The style to inherit from. Options: LLVM, Google, Chromium, Microsoft, Mozilla, WebKit
+BasedOnStyle: Google
+
+# --- Indentation ---
+IndentWidth: 4
+TabWidth: 4
+UseTab: Never # Use spaces instead of tabs
+
+# --- Braces and Brackets ---
+# Cuddle braces for functions, namespaces, etc.
+# void myFunction() {
+#   ...
+# }
+BreakBeforeBraces: Attach
+# Always add braces for single-line if/else/for statements
+AllowShortIfStatementsOnASingleLine: false
+AllowShortLoopsOnASingleLine: false
+
+# --- Spacing ---
+# Add a space after a C-style cast: (int) x -> (int)x
+SpacesInCStyleCastParentheses: false
+# Add a space before opening parentheses for control statements (if, for, while)
+SpaceBeforeParens: ControlStatements
+
+# --- Line Breaking and Wrapping ---
+# Set a reasonable column limit for line length
+ColumnLimit: 120
+# Penalty for breaking a line after the return type of a function
+PenaltyReturnTypeOnItsOwnLine: 200
+# How to wrap lines if they exceed the column limit
+BreakConstructorInitializers: BeforeColon
+
+# --- Pointer Alignment ---
+# Align pointers to the type (e.g., int* p)
+PointerAlignment: Left
+
+# --- Include Directives ---
+# Sort #include directives to keep them organized
+SortIncludes: CaseInsensitive
+IncludeBlocks: Regroup
+IncludeCategories:
+  - Regex:           '^<.*\.h>'
+    Priority:        1 # C system headers
+  - Regex:           '^<.*>'
+    Priority:        2 # C++ standard library headers
+  - Regex:           '^CGAL/'
+    Priority:        3 # CGAL headers
+  - Regex:           '.*'
+    Priority:        4 # Your own project headers
+
+# --- Other ---
+# Allow putting short functions on a single line
+AllowShortFunctionsOnASingleLine: All
+
+# Fix namespace comments to match the namespace name
+FixNamespaceComments: true

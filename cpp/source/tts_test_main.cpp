@@ -6,26 +6,26 @@
 
 using namespace std;
 
-int test_alpha_shape_generation(const string &infile, const double &alpha_sq_value, string &outfile) {
+int test_alpha_shape_generation(const string& infile, const double& alpha_sq_value, string& outfile) {
     std::cout << "\nTest alpha shape generation ONLY\n\n";
     return alpha_shape_generation(infile, alpha_sq_value, outfile);
 }
 
-int test_alpha_shape_segment(const string &infile, const double &alpha_sq_value, string &out_dir) {
+int test_alpha_shape_segment(const string& infile, const double& alpha_sq_value, string& out_dir) {
     std::cout << "\nTest alpha shape generation and segmentation\n\n";
     return alpha_shape_segment(infile, alpha_sq_value, out_dir);
 }
 
 
-int test_wls(const string &infile) {
+int test_wls(const string& infile) {
     std::cout << "\nTest wood-leaf separation. part 1\n\n";
     std::string outfile1;
     return get_oversegments(infile, outfile1);
 }
 
-int test_tree_extraction(const string &vg_meshfile, const string &trunk_file,
-                         const double &th_p2trunk_distance,
-                         const double &th_search_radius) {
+int test_tree_extraction(const string& vg_meshfile, const string& trunk_file,
+                         const double& th_p2trunk_distance,
+                         const double& th_search_radius) {
     // with detected tree locations
     std::cout << "\nTest tree extraction.\n\n";
     cout << "th_p2trunk_distance=" << th_p2trunk_distance << "\n";
@@ -34,14 +34,14 @@ int test_tree_extraction(const string &vg_meshfile, const string &trunk_file,
     return extract_single_trees(vg_meshfile, trunk_file, outfile, th_p2trunk_distance, th_search_radius);
 }
 
-int test_als_segment(const string &infile, double th_radius, double th_forest_pers, double th_height,
+int test_als_segment(const string& infile, double th_radius, double th_forest_pers, double th_height,
                      bool th_height_funtype,
-                     double th_pers_H, double th_pers_I, const string &ds) {
+                     double th_pers_H, double th_pers_I, const string& ds) {
     return als_segment(infile, th_radius, th_forest_pers, th_height, th_height_funtype,
                        th_pers_H, th_pers_I, ds);
 }
 
-int main(int argc, char *argv[]) {
+int main(int argc, char* argv[]) {
     string last = argv[argc - 1];
     if (last == "-as") {
         string infile = argv[1];

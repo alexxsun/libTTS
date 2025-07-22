@@ -6,12 +6,13 @@
 #include "../io_support/happly.h"
 
 
-void TopoSegment::_get_connected_points(const double &th_h1, const double &th_h2, vector<std::set<int> > &con_pts) {
+void TopoSegment::_get_connected_points(const double& th_h1, const double& th_h2, vector<std::set<int> >& con_pts) {
     /* generate vv relationship of points (x,y,z,...) with p.z in [th_h1, th_h2]
         * point: xyzv
         *
         */
-    if (_showlog) cout << "get connected low points in [" << th_h1 << ", " << th_h2 << "]\n";
+    if (_showlog)
+        cout << "get connected low points in [" << th_h1 << ", " << th_h2 << "]\n";
 
     std::map<int, set<int> > vv; //
     std::map<int, int> to_process; // 1: processed, otherwise 0
@@ -23,7 +24,7 @@ void TopoSegment::_get_connected_points(const double &th_h1, const double &th_h2
         }
         to_process[i] = 0;
         implicitS tmp(i);
-        for (auto nbh: *sc.adjacents(tmp)) {
+        for (auto nbh : *sc.adjacents(tmp)) {
             int j = nbh.getConstVertices()[0];
             Vertex v2 = sc.getVertex(j);
             if (v2.getCoordinate(2) < th_h1 || v2.getCoordinate(2) > th_h2) {
@@ -37,10 +38,11 @@ void TopoSegment::_get_connected_points(const double &th_h1, const double &th_h2
             to_process[j] = 0;
         }
     }
-    if (_showlog) cout << "vv done\n";
+    if (_showlog)
+        cout << "vv done\n";
 
     // DFS?
-    for (const auto &pid: to_process) {
+    for (const auto& pid : to_process) {
         if (pid.second > 0) {
             // processed
             continue;
@@ -50,7 +52,7 @@ void TopoSegment::_get_connected_points(const double &th_h1, const double &th_h2
         to_process[vid] = 1;
         std::set<int> tmp_con = {vid}; // init connected points
         std::vector<int> nbhs; // init neighbors.
-        for (const auto &nvid: vv[vid]) {
+        for (const auto& nvid : vv[vid]) {
             nbhs.push_back(nvid);
         }
         while (!nbhs.empty()) {
@@ -62,7 +64,7 @@ void TopoSegment::_get_connected_points(const double &th_h1, const double &th_h2
             }
             to_process[nbh] = 1;
             tmp_con.insert(nbh);
-            for (const auto &nvid: vv[nbh]) {
+            for (const auto& nvid : vv[nbh]) {
                 nbhs.push_back(nvid);
             }
         }
@@ -70,30 +72,32 @@ void TopoSegment::_get_connected_points(const double &th_h1, const double &th_h2
         con_pts.push_back(tmp_con);
     }
 
-    if (_showlog) cout << "connected low points done\n";
+    if (_showlog)
+        cout << "connected low points done\n";
 }
 
 
-std::vector<int> TopoSegment::_label_points_by_grouped_mins(const map<int, std::vector<implicitS> > &gp_mins) {
+std::vector<int> TopoSegment::_label_points_by_grouped_mins(const map<int, std::vector<implicitS> >& gp_mins) {
     /*
     * label: mins
     * -2: boundary, 0: unlabeled, >=1: valid labels
     */
-    if (_showlog) cout << "\nlabel points\n";
+    if (_showlog)
+        cout << "\nlabel points\n";
 
     std::vector<int> pts_lbls(sc.getVerticesNum(), 0);
 
-    for (const auto &gps: gp_mins) {
+    for (const auto& gps : gp_mins) {
         int lbl = gps.first;
         if (lbl < 1) {
             continue; // valid lbl starts from 1
         }
-        for (const auto &cc: gps.second) {
+        for (const auto& cc : gps.second) {
             SSet tmp_cells;
             computeAscendingCell(true, cc, tmp_cells);
             // label points in the ascending/descending cells
-            for (const auto &ac: tmp_cells) {
-                for (const auto &vid: ac.getConstVertices()) {
+            for (const auto& ac : tmp_cells) {
+                for (const auto& vid : ac.getConstVertices()) {
                     if (pts_lbls[vid] > 0) {
                         int old_lbl = pts_lbls[vid];
                         if (old_lbl != lbl) {
@@ -110,14 +114,14 @@ std::vector<int> TopoSegment::_label_points_by_grouped_mins(const map<int, std::
     if (_showlog) {
         cout << "# of final labels: " << gp_mins.size() << endl;
         std::vector<std::pair<int, int> > lblnums;
-        for (const auto &gps: gp_mins) {
+        for (const auto& gps : gp_mins) {
             int n = count(pts_lbls.begin(), pts_lbls.end(), gps.first);
             // cout << "lbl: " << gps.first << ", # " << n << endl;
             lblnums.push_back(std::pair<int, int>(gps.first, n));
         }
         std::sort(lblnums.begin(), lblnums.end(),
-                  [](const std::pair<int, int> &a, const std::pair<int, int> &b) { return a.second > b.second; });
-        for (const auto &ln: lblnums) {
+                  [](const std::pair<int, int>& a, const std::pair<int, int>& b) { return a.second > b.second; });
+        for (const auto& ln : lblnums) {
             cout << "lbl: " << ln.first << ", # " << ln.second << endl;
         }
     }
@@ -125,12 +129,13 @@ std::vector<int> TopoSegment::_label_points_by_grouped_mins(const map<int, std::
     return pts_lbls;
 }
 
-int TopoSegment::_label_points_by_grouped_mins_parallel(const map<int, std::vector<implicitS> > &gp_mins) {
+int TopoSegment::_label_points_by_grouped_mins_parallel(const map<int, std::vector<implicitS> >& gp_mins) {
     /*
     * label: mins
     * -2: boundary, 0: unlabeled, >=1: valid labels
     */
-    if (_showlog) cout << "\nlabel points in parallel\n";
+    if (_showlog)
+        cout << "\nlabel points in parallel\n";
 
     _pts_lbls = std::vector<int>(sc.getVerticesNum(), 0);
 
@@ -145,15 +150,16 @@ int TopoSegment::_label_points_by_grouped_mins_parallel(const map<int, std::vect
 #pragma omp for schedule(dynamic) nowait
         for (size_t i = 0; i < gp_mins_vec.size(); ++i) {
             int lbl = gp_mins_vec[i].first;
-            if (lbl < 1) continue; // valid lbl starts from 1
+            if (lbl < 1)
+                continue; // valid lbl starts from 1
 
-            for (const auto &cc: gp_mins_vec[i].second) {
+            for (const auto& cc : gp_mins_vec[i].second) {
                 SSet tmp_cells;
                 computeAscendingCell(true, cc, tmp_cells);
 
                 // Label points in the ascending/descending cells
-                for (const auto &ac: tmp_cells) {
-                    for (const auto &vid: ac.getConstVertices()) {
+                for (const auto& ac : tmp_cells) {
+                    for (const auto& vid : ac.getConstVertices()) {
                         if (local_labels[vid] > 0) {
                             int old_lbl = local_labels[vid];
                             if (old_lbl != lbl) {
@@ -184,19 +190,18 @@ int TopoSegment::_label_points_by_grouped_mins_parallel(const map<int, std::vect
         }
     }
 
-
     if (_showlog && false) {
         // skip for the test
         cout << "# of final labels: " << gp_mins.size() << endl;
         std::vector<std::pair<int, int> > lblnums;
-        for (const auto &gps: gp_mins) {
+        for (const auto& gps : gp_mins) {
             int n = count(_pts_lbls.begin(), _pts_lbls.end(), gps.first);
             // cout << "lbl: " << gps.first << ", # " << n << endl;
             lblnums.push_back(std::pair<int, int>(gps.first, n));
         }
         std::sort(lblnums.begin(), lblnums.end(),
-                  [](const std::pair<int, int> &a, const std::pair<int, int> &b) { return a.second > b.second; });
-        for (const auto &ln: lblnums) {
+                  [](const std::pair<int, int>& a, const std::pair<int, int>& b) { return a.second > b.second; });
+        for (const auto& ln : lblnums) {
             cout << "lbl: " << ln.first << ", # " << ln.second << endl;
         }
     }
@@ -204,12 +209,13 @@ int TopoSegment::_label_points_by_grouped_mins_parallel(const map<int, std::vect
     return 1;
 }
 
-void TopoSegment::_output_pts_with_label_pts(const string &outfile, const vector<int> &lbls, const bool &scaled) {
+void TopoSegment::_output_pts_with_label_pts(const string& outfile, const vector<int>& lbls, const bool& scaled) {
     /*
         * x y z lbl
         * ...
         */
-    if (_showlog) cout << "write: " << outfile << endl;
+    if (_showlog)
+        cout << "write: " << outfile << endl;
 
     ofstream ofs(outfile);
     ofs << fixed << setprecision(3);
@@ -220,23 +226,24 @@ void TopoSegment::_output_pts_with_label_pts(const string &outfile, const vector
         Vertex v = sc.getVertex(i);
         if (scaled) {
             ofs << v.getCoordinate(0) - sc.sc_min_x << " " << v.getCoordinate(1) - sc.sc_min_y << " "
-                    << v.getCoordinate(2)
-                    << " " << lbls[i] << endl;
+                << v.getCoordinate(2)
+                << " " << lbls[i] << endl;
         } else {
             ofs << v.getCoordinate(0) << " " << v.getCoordinate(1) << " " << v.getCoordinate(2) << " " << lbls[i]
-                    << endl;
+                << endl;
         }
     }
 }
 
 
-void TopoSegment::_output_pts_with_label_pts_ply(const string &outfile, const vector<int> &lbls,
-                                                 const bool &scaled) {
+void TopoSegment::_output_pts_with_label_pts_ply(const string& outfile, const vector<int>& lbls,
+                                                 const bool& scaled) {
     /*
         * x y z lbl
         * ...
         */
-    if (_showlog) cout << "write: " << outfile << endl;
+    if (_showlog)
+        cout << "write: " << outfile << endl;
     std::vector<std::array<double, 3> > ply_vertices;
     for (int i = 0; i < sc.getVerticesNum(); ++i) {
         Vertex v = sc.getVertex(i);
@@ -258,22 +265,22 @@ void TopoSegment::_output_pts_with_label_pts_ply(const string &outfile, const ve
     plyOut.write(outfile, happly::DataFormat::Binary);
 }
 
-void TopoSegment::_output_pts_with_label_vtk(const string &outfile, const vector<int> &lbls, const bool &scaled) {
+void TopoSegment::_output_pts_with_label_vtk(const string& outfile, const vector<int>& lbls, const bool& scaled) {
     ofstream ofs(outfile);
     ofs << fixed << setprecision(3);
     ofs << "# vtk DataFile Version 2.0\n"
-            "\n"
-            "ASCII \n"
-            "DATASET UNSTRUCTURED_GRID\n"
-            "\n";
+        "\n"
+        "ASCII \n"
+        "DATASET UNSTRUCTURED_GRID\n"
+        "\n";
     ofs << "POINTS " << sc.getVerticesNum() << " float\n";
 
     for (int i = 0; i < sc.getVerticesNum(); ++i) {
         Vertex v = sc.getVertex(i);
         if (scaled) {
             ofs << v.getCoordinate(0) - sc.sc_min_x << " " << v.getCoordinate(1) - sc.sc_min_y << " "
-                    << v.getCoordinate(2)
-                    << endl;
+                << v.getCoordinate(2)
+                << endl;
         } else {
             ofs << v.getCoordinate(0) << " " << v.getCoordinate(1) << " " << v.getCoordinate(2) << endl;
         }
@@ -297,39 +304,39 @@ void TopoSegment::_output_pts_with_label_vtk(const string &outfile, const vector
     }
 }
 
-void TopoSegment::_output_mins_pts(const std::vector<implicitS> &mins, const std::string &ptsfile, const bool &scaled) {
+void TopoSegment::_output_mins_pts(const std::vector<implicitS>& mins, const std::string& ptsfile, const bool& scaled) {
     ofstream ofs(ptsfile);
     ofs << fixed << setprecision(2);
 
     // points
-    for (const auto &v: mins) {
+    for (const auto& v : mins) {
         Vertex ver = sc.getVertex(v.getConstVertices()[0]);
         if (scaled) {
             ofs << ver.getCoordinate(0) - sc.sc_min_x << " " << ver.getCoordinate(1) - sc.sc_min_y << " "
-                    << ver.getCoordinate(2) << endl;
+                << ver.getCoordinate(2) << endl;
         } else {
             ofs << ver.getCoordinate(0) << " " << ver.getCoordinate(1) << " " << ver.getCoordinate(2) << endl;
         }
     }
 }
 
-void TopoSegment::_output_mins_vtk(const std::vector<implicitS> &mins, const std::string &vtktfile,
-                                   const bool &scaled) {
+void TopoSegment::_output_mins_vtk(const std::vector<implicitS>& mins, const std::string& vtktfile,
+                                   const bool& scaled) {
     int pts_num = mins.size();
     int cell_num = mins.size();
     ofstream ofs(vtktfile);
     ofs << fixed << setprecision(2);
     ofs << "# vtk DataFile Version 2.0\n"
-            "tm graph\n"
-            "ASCII\n"
-            "DATASET UNSTRUCTURED_GRID\n";
+        "tm graph\n"
+        "ASCII\n"
+        "DATASET UNSTRUCTURED_GRID\n";
     // points
     ofs << "POINTS " << pts_num << " float\n";
-    for (const auto &v: mins) {
+    for (const auto& v : mins) {
         Vertex ver = sc.getVertex(v.getConstVertices()[0]);
         if (scaled) {
             ofs << ver.getCoordinate(0) - sc.sc_min_x << " " << ver.getCoordinate(1) - sc.sc_min_y << " "
-                    << ver.getCoordinate(2) << endl;
+                << ver.getCoordinate(2) << endl;
         } else {
             ofs << ver.getCoordinate(0) << " " << ver.getCoordinate(1) << " " << ver.getCoordinate(2) << endl;
         }
@@ -355,7 +362,7 @@ void TopoSegment::_output_mins_vtk(const std::vector<implicitS> &mins, const std
     }
     ofs << endl;
     ofs << "v 1 " << cell_num << " float\n";
-    for (const auto &v: mins) {
+    for (const auto& v : mins) {
         Vertex ver = sc.getVertex(v.getConstVertices()[0]);
         ofs << ver.getCoordinate(3) << endl;
     }
@@ -363,23 +370,23 @@ void TopoSegment::_output_mins_vtk(const std::vector<implicitS> &mins, const std
     ofs.close();
 }
 
-void TopoSegment::_output_gpmins_pts(const map<int, std::vector<implicitS> > &gp_mins, const std::string &ptsfile,
-                                     const bool &scaled) {
+void TopoSegment::_output_gpmins_pts(const map<int, std::vector<implicitS> >& gp_mins, const std::string& ptsfile,
+                                     const bool& scaled) {
     // gp_min: lbl: vector of mins
     ofstream ofs(ptsfile);
     ofs << fixed << setprecision(2);
 
     // points
-    for (const auto &gps: gp_mins) {
+    for (const auto& gps : gp_mins) {
         int lbl = gps.first;
-        for (const auto &v: gps.second) {
+        for (const auto& v : gps.second) {
             Vertex ver = sc.getVertex(v.getConstVertices()[0]);
             if (scaled) {
                 ofs << ver.getCoordinate(0) - sc.sc_min_x << " " << ver.getCoordinate(1) - sc.sc_min_y << " "
-                        << ver.getCoordinate(2) << " " << lbl << endl;
+                    << ver.getCoordinate(2) << " " << lbl << endl;
             } else {
                 ofs << ver.getCoordinate(0) << " " << ver.getCoordinate(1) << " " << ver.getCoordinate(2) << " " << lbl
-                        << endl;
+                    << endl;
             }
         }
     }

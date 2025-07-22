@@ -11,7 +11,7 @@
 namespace py = pybind11;
 
 std::string generate_alpha_shape_py(
-    const std::string &infile,
+    const std::string& infile,
     double alpha_sq_value) {
     std::string output_filename_from_cpp;
     int status = alpha_shape_generation(infile, alpha_sq_value, output_filename_from_cpp);
@@ -24,7 +24,7 @@ std::string generate_alpha_shape_py(
     return output_filename_from_cpp;
 }
 
-std::string get_oversegments_py(const string &infile) {
+std::string get_oversegments_py(const string& infile) {
     std::string out_segfile;
     int status = get_oversegments(infile, out_segfile);
     if (status != 1) {
@@ -34,8 +34,8 @@ std::string get_oversegments_py(const string &infile) {
 }
 
 std::string tls_extract_single_trees_py(
-    const std::string &vg_mesh_file,
-    const std::string &loc_file,
+    const std::string& vg_mesh_file,
+    const std::string& loc_file,
     double th_p2trunk_distance,
     double th_search_radius) {
     std::string output_filename_from_cpp;
@@ -53,22 +53,19 @@ PYBIND11_MODULE(_libtts, m) {
     // Python module name
     m.doc() = "Internal C++ bindings for libTTS"; // Optional module docstring
 
-
     // (infile, th_sq_value) -> outfile
     m.def("generate_alpha_shape_cpp",
           &generate_alpha_shape_py,
           "Generates 3D alpha shape. infile: pts file",
           py::arg("infile"),
           py::arg("alpha_sq_value") = 0.01
-    );
-
+        );
 
     m.def("get_oversegments_cpp",
           &get_oversegments_py,
           "Performs over-segmentation. infile: shape file",
           py::arg("infile")
-    );
-
+        );
 
     m.def("tls_extract_single_trees_cpp",
           &tls_extract_single_trees_py,
@@ -77,7 +74,7 @@ PYBIND11_MODULE(_libtts, m) {
           py::arg("loc_file"),
           py::arg("th_p2trunk_distance") = 0.2,
           py::arg("th_search_radius") = 0.25
-    );
+        );
 
     // ALS: segmentation. to improve.
     m.def("als_segment",
@@ -91,5 +88,5 @@ PYBIND11_MODULE(_libtts, m) {
           py::arg("th_pers_I") = -1,
           py::arg("th_height_funtype") = true,
           py::arg("ds") = ""
-    );
+        );
 }
