@@ -320,11 +320,11 @@ void TopoSegment::_output_mins_pts(const std::vector<implicitS>& mins, const std
     }
 }
 
-void TopoSegment::_output_mins_vtk(const std::vector<implicitS>& mins, const std::string& vtktfile,
+void TopoSegment::_output_mins_vtk(const std::vector<implicitS>& mins, const std::string& vtkfile,
                                    const bool& scaled) {
     int pts_num = mins.size();
     int cell_num = mins.size();
-    ofstream ofs(vtktfile);
+    ofstream ofs(vtkfile);
     ofs << fixed << setprecision(2);
     ofs << "# vtk DataFile Version 2.0\n"
         "tm graph\n"

@@ -5,13 +5,13 @@
 //
 #include "formangradient.h"
 
-void FormanGradient::xx_output_critical_cells(const string &outfile) {
+void FormanGradient::xx_output_critical_cells(const string& outfile) {
     // min: vertex, saddle: edge, middle point, triangle: centroid point
     // output format
     // x y z type [min:0, saddle:1, ...]
     std::vector<std::array<double, 4> > cc_pts; // (x,y,z,type)
     for (int i = 0; i < 3; i++) {
-        for (const auto &cc: criticalS[i]) {
+        for (const auto& cc : criticalS[i]) {
             vector<int> vertices = cc.getConstVertices();
             //
             if (i == 0) {
@@ -51,13 +51,13 @@ void FormanGradient::xx_output_critical_cells(const string &outfile) {
     // write file
     ofstream ofs(outfile);
     ofs << fixed << setprecision(2);
-    for (const auto &p: cc_pts) {
+    for (const auto& p : cc_pts) {
         ofs << p[0] << " " << p[1] << " " << p[2] << " " << p[3] << endl;
     }
     ofs.close();
 }
 
-int FormanGradient::xx_output_critical_cells_vtk(const string &vtkfile) {
+int FormanGradient::xx_output_critical_cells_vtk(const string& vtkfile) {
     // min: vertex, saddle: edge, max: triangle
 
     std::vector<std::array<double, 3> > cc_pts;
@@ -65,7 +65,7 @@ int FormanGradient::xx_output_critical_cells_vtk(const string &vtkfile) {
 
     // mins
     cp_min_num = criticalS[0].size();
-    for (const auto &cc: criticalS[0]) {
+    for (const auto& cc : criticalS[0]) {
         vector<int> vertices = cc.getConstVertices();
         Vertex v = sc.getVertex(vertices[0]);
         double x, y, z;
@@ -77,7 +77,7 @@ int FormanGradient::xx_output_critical_cells_vtk(const string &vtkfile) {
     // saddles
     cp_saddle_st = cc_pts.size();
     cp_saddle_num = criticalS[1].size();
-    for (const auto &cc: criticalS[1]) {
+    for (const auto& cc : criticalS[1]) {
         vector<int> vertices = cc.getConstVertices();
         Vertex v = sc.getVertex(vertices[0]);
         Vertex v2 = sc.getVertex(vertices[1]);
@@ -94,7 +94,7 @@ int FormanGradient::xx_output_critical_cells_vtk(const string &vtkfile) {
     // maxs
     cp_max_st = cc_pts.size();
     cp_max_num = criticalS[2].size();
-    for (const auto &cc: criticalS[2]) {
+    for (const auto& cc : criticalS[2]) {
         vector<int> vertices = cc.getConstVertices();
         Vertex v = sc.getVertex(vertices[0]);
         Vertex v2 = sc.getVertex(vertices[1]);
@@ -122,18 +122,18 @@ int FormanGradient::xx_output_critical_cells_vtk(const string &vtkfile) {
     ofstream ofs(vtkfile);
     ofs << fixed << setprecision(3);
     ofs << "# vtk DataFile Version 2.0\n"
-            "critical cells\n"
-            "ASCII\n"
-            "DATASET UNSTRUCTURED_GRID\n";
+        "critical cells\n"
+        "ASCII\n"
+        "DATASET UNSTRUCTURED_GRID\n";
     // points
     ofs << "POINTS " << cc_pts.size() << " float\n";
-    for (const auto &pt: cc_pts) {
+    for (const auto& pt : cc_pts) {
         ofs << pt[0] << " " << pt[1] << " " << pt[2] << endl;
     }
     // cells
     ofs << "CELLS " << cells_num << " "
-            << 2 * cp_min_num + 3 * cp_saddle_num + 4 * cp_max_num
-            << endl;
+        << 2 * cp_min_num + 3 * cp_saddle_num + 4 * cp_max_num
+        << endl;
     for (int i = 0; i < cp_min_num; ++i) {
         ofs << "1 " << i << endl;
     }
@@ -180,18 +180,18 @@ int FormanGradient::xx_output_critical_cells_vtk(const string &vtkfile) {
     return 0; // everything goes well
 }
 
-void FormanGradient::xx_vis_CriticalCells_01(const string &vtkfile, const bool &scaled) {
+void FormanGradient::xx_vis_CriticalCells_01(const string& vtkfile, const bool& scaled) {
     // scaled: scaled or not. only scale x,y
 
     vector<vector<int> > ccs; // critical cells
     vector<Vertex> saddle_points; // saddle middle point
 
-    for (const auto &cc: criticalS[0]) {
+    for (const auto& cc : criticalS[0]) {
         ccs.push_back(cc.getConstVertices());
     }
     size_t saddle_sid = ccs.size(); // saddle begin id, also the pts number of the
     // critical minimal points
-    for (const auto &cc: criticalS[1]) {
+    for (const auto& cc : criticalS[1]) {
         ccs.push_back(cc.getConstVertices());
         vector<int> vertices = cc.getConstVertices();
         Vertex v = sc.getVertex(vertices[0]);
@@ -202,8 +202,8 @@ void FormanGradient::xx_vis_CriticalCells_01(const string &vtkfile, const bool &
 
     map<int, int> old2new; // original point id -> written vtk point id
     int pts_num = 0;
-    for (auto &cp: ccs) {
-        for (auto p: cp) {
+    for (auto& cp : ccs) {
+        for (auto p : cp) {
             if (old2new.find(p) == old2new.end()) {
                 old2new[p] = pts_num;
                 pts_num += 1;
@@ -211,7 +211,7 @@ void FormanGradient::xx_vis_CriticalCells_01(const string &vtkfile, const bool &
         }
     }
     vector<int> new2old(pts_num);
-    for (auto &on: old2new) {
+    for (auto& on : old2new) {
         new2old[on.second] = on.first;
     }
 
@@ -225,7 +225,7 @@ void FormanGradient::xx_vis_CriticalCells_01(const string &vtkfile, const bool &
         lp_nums.push_back(0); // lp_nums.push_back(tm_getLPnumber(p));
     }
 
-    for (auto &v: saddle_points) {
+    for (auto& v : saddle_points) {
         lp_nums.push_back(0); // lp_nums.push_back(tm_getLPnumber(v));
         lp_nums.push_back(0); // lp_nums.push_back(tm_getLPnumber(v));
     }
@@ -233,24 +233,24 @@ void FormanGradient::xx_vis_CriticalCells_01(const string &vtkfile, const bool &
     // write vtk
     ofstream ofs(vtkfile);
     ofs << "# vtk DataFile Version 2.0\n"
-            "critical cells\n"
-            "ASCII\n"
-            "DATASET UNSTRUCTURED_GRID\n";
+        "critical cells\n"
+        "ASCII\n"
+        "DATASET UNSTRUCTURED_GRID\n";
     // points
     ofs << "POINTS " << pts_num + saddle_points.size() << " float\n";
-    for (const auto &v: new2old) {
+    for (const auto& v : new2old) {
         Vertex ver = sc.getVertex(v);
         if (scaled) {
             ofs << ver.getCoordinate(0) - sc.sc_min_x << " " << ver.getCoordinate(1) - sc.sc_min_y << " "
-                    << ver.getCoordinate(2) << endl;
+                << ver.getCoordinate(2) << endl;
         } else {
             ofs << ver.getCoordinate(0) << " " << ver.getCoordinate(1) << " " << ver.getCoordinate(2) << endl;
         }
     }
-    for (auto &ver: saddle_points) {
+    for (auto& ver : saddle_points) {
         if (scaled) {
             ofs << ver.getCoordinate(0) - sc.sc_min_x << " " << ver.getCoordinate(1) - sc.sc_min_y << " "
-                    << ver.getCoordinate(2) << endl;
+                << ver.getCoordinate(2) << endl;
         } else {
             ofs << ver.getCoordinate(0) << " " << ver.getCoordinate(1) << " " << ver.getCoordinate(2) << endl;
         }
@@ -260,7 +260,7 @@ void FormanGradient::xx_vis_CriticalCells_01(const string &vtkfile, const bool &
     ofs << "CELLS " << cell_num << " " << 2 * (saddle_sid + saddle_points.size()) + 3 * saddle_points.size() << endl;
     for (auto i = 0; i < saddle_sid; ++i) {
         ofs << "1 ";
-        for (auto &v: ccs[i]) {
+        for (auto& v : ccs[i]) {
             ofs << old2new[v] << " ";
         }
         ofs << endl;
@@ -272,7 +272,7 @@ void FormanGradient::xx_vis_CriticalCells_01(const string &vtkfile, const bool &
     }
     for (size_t i = saddle_sid; i < ccs.size(); ++i) {
         ofs << "2 ";
-        for (auto &v: ccs[i]) {
+        for (auto& v : ccs[i]) {
             ofs << old2new[v] << " ";
         }
         ofs << endl;
@@ -316,14 +316,14 @@ void FormanGradient::xx_vis_CriticalCells_01(const string &vtkfile, const bool &
     }
     ofs << endl;
     ofs << "num 1 " << cell_num << " int\n";
-    for (auto &n: lp_nums) {
+    for (auto& n : lp_nums) {
         ofs << n << " ";
     }
     ofs << endl;
     ofs.close();
 }
 
-void FormanGradient::xx_vis_paired_arrows(const string &outfile) {
+void FormanGradient::xx_vis_paired_arrows(const string& outfile) {
     // todo: to finish it
 
     // generate arrow csv file
@@ -336,11 +336,11 @@ void FormanGradient::xx_vis_paired_arrows(const string &outfile) {
     // write
 }
 
-void FormanGradient::xx_vis_VPath_01(const string &vtkfile, const bool &scaled, const bool &outdebugfile) {
+void FormanGradient::xx_vis_VPath_01(const string& vtkfile, const bool& scaled, const bool& outdebugfile) {
     // get separatrix v-path: a array of cells. -> save vertices of cells
     // -> vector<vector<int>> vpaths; start from the end point of saddle edge
     vector<vector<int> > v_paths;
-    for (const auto &cc_1: criticalS[1]) {
+    for (const auto& cc_1 : criticalS[1]) {
         // critical 1-cells
         for (int i = 0; i < 2; ++i) {
             // cell.getConstVertices().size()
@@ -391,9 +391,9 @@ void FormanGradient::xx_vis_VPath_01(const string &vtkfile, const bool &scaled, 
     int pts_num = 0;
     size_t cell_num = v_paths.size();
     size_t cell_items_num = 0;
-    for (const auto &vp: v_paths) {
+    for (const auto& vp : v_paths) {
         cell_items_num = cell_items_num + 1 + vp.size();
-        for (auto &v: vp) {
+        for (auto& v : vp) {
             if (old2new.find(v) == old2new.end()) {
                 // new point in old2new
                 old2new[v] = pts_num;
@@ -402,7 +402,7 @@ void FormanGradient::xx_vis_VPath_01(const string &vtkfile, const bool &scaled, 
         }
     }
     vector<int> new2old(static_cast<unsigned long>(pts_num));
-    for (const auto &v: old2new) {
+    for (const auto& v : old2new) {
         new2old[v.second] = v.first;
     }
     // write vtk file
@@ -412,25 +412,25 @@ void FormanGradient::xx_vis_VPath_01(const string &vtkfile, const bool &scaled, 
     ofstream ofs(vtkfile);
     ofs << fixed << setprecision(2);
     ofs << "# vtk DataFile Version 2.0\n"
-            "tm graph\n"
-            "ASCII\n"
-            "DATASET UNSTRUCTURED_GRID\n";
+        "tm graph\n"
+        "ASCII\n"
+        "DATASET UNSTRUCTURED_GRID\n";
     // points
     ofs << "POINTS " << pts_num << " float\n";
-    for (const auto &v: new2old) {
+    for (const auto& v : new2old) {
         Vertex ver = sc.getVertex(v);
         if (scaled) {
             ofs << ver.getCoordinate(0) - sc.sc_min_x << " " << ver.getCoordinate(1) - sc.sc_min_y << " "
-                    << ver.getCoordinate(2) << endl;
+                << ver.getCoordinate(2) << endl;
         } else {
             ofs << ver.getCoordinate(0) << " " << ver.getCoordinate(1) << " " << ver.getCoordinate(2) << endl;
         }
     }
     // cells: polylines = 4
     ofs << "CELLS " << cell_num << " " << cell_items_num << endl;
-    for (const auto &vp: v_paths) {
+    for (const auto& vp : v_paths) {
         ofs << vp.size() << " ";
-        for (auto &v: vp) {
+        for (auto& v : vp) {
             ofs << old2new[v] << " ";
         }
         ofs << endl;
@@ -457,25 +457,25 @@ void FormanGradient::xx_vis_VPath_01(const string &vtkfile, const bool &scaled, 
         ofstream df("debug.txt");
         df << "sep vpaths\n";
         size_t sp_id = 0;
-        for (const auto &vp: v_paths) {
+        for (const auto& vp : v_paths) {
             df << sp_id << ": ";
-            for (auto &v: vp) {
+            for (auto& v : vp) {
                 df << v << " ";
             }
             sp_id += 1;
             df << endl;
         }
         df << "ol2new\n";
-        for (auto on: old2new) {
+        for (auto on : old2new) {
             df << on.first << " <-> " << on.second << endl;
         }
         df.close();
     }
 }
 
-void FormanGradient::xx_vis_VPath_12(const string &vtkfile, const bool &scaled, const bool &outdebugfile) {
+void FormanGradient::xx_vis_VPath_12(const string& vtkfile, const bool& scaled, const bool& outdebugfile) {
     std::vector<std::vector<implicitS> > vpaths;
-    for (const auto &cc_1: criticalS[1]) {
+    for (const auto& cc_1 : criticalS[1]) {
         // critical 1-cells
         //cout<<"\ncheck saddle: "<< cc_1<<endl;
         std::vector<std::vector<implicitS> > tmp_ps;
@@ -489,29 +489,29 @@ void FormanGradient::xx_vis_VPath_12(const string &vtkfile, const bool &scaled, 
     ofstream ofs(vtkfile);
     ofs << fixed << setprecision(2);
     ofs << "# vtk DataFile Version 2.0\n"
-            "tm graph\n"
-            "ASCII\n"
-            "DATASET UNSTRUCTURED_GRID\n";
+        "tm graph\n"
+        "ASCII\n"
+        "DATASET UNSTRUCTURED_GRID\n";
 
     size_t pts_num = 0;
     size_t cell_num = 0;
     size_t cell_items_num = 0;
-    for (const auto &vp: vpaths) {
+    for (const auto& vp : vpaths) {
         cell_num += vp.size();
-        for (const auto &s: vp) {
+        for (const auto& s : vp) {
             cell_items_num = cell_items_num + (1 + s.getConstVertices().size());
             pts_num += s.getConstVertices().size();
         }
     }
 
     ofs << "POINTS " << pts_num << " float\n";
-    for (const auto &vp: vpaths) {
-        for (const auto &s: vp) {
-            for (const auto &vid: s.getConstVertices()) {
+    for (const auto& vp : vpaths) {
+        for (const auto& s : vp) {
+            for (const auto& vid : s.getConstVertices()) {
                 Vertex ver = sc.getVertex(vid);
                 if (scaled) {
                     ofs << ver.getCoordinate(0) - sc.sc_min_x << " " << ver.getCoordinate(1) - sc.sc_min_y << " "
-                            << ver.getCoordinate(2) << endl;
+                        << ver.getCoordinate(2) << endl;
                 } else {
                     ofs << ver.getCoordinate(0) << " " << ver.getCoordinate(1) << " " << ver.getCoordinate(2) << endl;
                 }
@@ -521,8 +521,8 @@ void FormanGradient::xx_vis_VPath_12(const string &vtkfile, const bool &scaled, 
 
     ofs << "CELLS " << cell_num << " " << cell_items_num << endl;
     int vid = 0;
-    for (const auto &vp: vpaths) {
-        for (const auto &s: vp) {
+    for (const auto& vp : vpaths) {
+        for (const auto& s : vp) {
             size_t tmp_vnum = s.getConstVertices().size();
             if (tmp_vnum == 2) {
                 ofs << "2 "; // VTK_LINE (=3)
@@ -538,8 +538,8 @@ void FormanGradient::xx_vis_VPath_12(const string &vtkfile, const bool &scaled, 
     }
 
     ofs << "CELL_TYPES " << cell_num << endl;
-    for (const auto &vp: vpaths) {
-        for (const auto &s: vp) {
+    for (const auto& vp : vpaths) {
+        for (const auto& s : vp) {
             size_t tmp_vnum = s.getConstVertices().size();
             if (tmp_vnum == 2) {
                 ofs << "3 "; // VTK_LINE (=3)
@@ -556,8 +556,8 @@ void FormanGradient::xx_vis_VPath_12(const string &vtkfile, const bool &scaled, 
     ofs << "FIELD FieldData 1\n";
     ofs << "pid 1 " << cell_num << " int\n";
     int vp_id = 0;
-    for (const auto &vp: vpaths) {
-        for (const auto &s: vp) {
+    for (const auto& vp : vpaths) {
+        for (const auto& s : vp) {
             ofs << vp_id << " ";
         }
         vp_id = vp_id + 1;
@@ -568,11 +568,11 @@ void FormanGradient::xx_vis_VPath_12(const string &vtkfile, const bool &scaled, 
     ofs.close();
 }
 
-void FormanGradient::xx_visMorse(const string &output_prefix) {
+void FormanGradient::xx_visMorse(const string& output_prefix) {
     list<SSet> descending1manifold;
     list<SSet> ascending1manifold;
-    for (auto criticalLVL: criticalS) {
-        for (implicitS c: criticalLVL.second) {
+    for (auto criticalLVL : criticalS) {
+        for (implicitS c : criticalLVL.second) {
             SSet ascending, descending;
 
             if (c.getDim() == 1) {
@@ -592,17 +592,17 @@ void FormanGradient::xx_visMorse(const string &output_prefix) {
     accurate_asc1cells(ascending1manifold, outfile2);
 }
 
-void FormanGradient::xx_critical_cells_net_2d(const std::string &vtkfile, const std::string &txtfile) {
+void FormanGradient::xx_critical_cells_net_2d(const std::string& vtkfile, const std::string& txtfile) {
     std::map<implicitS, int> cps_map;
     int cp_id = 0;
     std::vector<std::vector<int> > edges;
-    for (const auto &s: criticalS[1]) {
+    for (const auto& s : criticalS[1]) {
         cps_map[s] = cp_id;
         cp_id = cp_id + 1;
         vector<implicitS> mins, maxs;
         saddle2minima(s, mins);
         saddle2maxima(s, maxs);
-        for (const auto &m: mins) {
+        for (const auto& m : mins) {
             if (cps_map.find(m) == cps_map.end()) {
                 cps_map[m] = cp_id;
                 cp_id = cp_id + 1;
@@ -612,7 +612,7 @@ void FormanGradient::xx_critical_cells_net_2d(const std::string &vtkfile, const 
             v2 = cps_map[m];
             edges.push_back({v1, v2});
         }
-        for (const auto &m: maxs) {
+        for (const auto& m : maxs) {
             if (cps_map.find(m) == cps_map.end()) {
                 cps_map[m] = cp_id;
                 cp_id = cp_id + 1;
@@ -625,7 +625,7 @@ void FormanGradient::xx_critical_cells_net_2d(const std::string &vtkfile, const 
     }
 
     std::vector<implicitS> cps(cps_map.size());
-    for (const auto &c: cps_map) {
+    for (const auto& c : cps_map) {
         cps[c.second] = c.first;
     }
 
@@ -639,20 +639,19 @@ void FormanGradient::xx_critical_cells_net_2d(const std::string &vtkfile, const 
     ofstream ofs(vtkfile);
     ofs << fixed << setprecision(3);
     ofs << "# vtk DataFile Version 2.0\n"
-            "critical cells\n"
-            "ASCII\n"
-            "DATASET UNSTRUCTURED_GRID\n";
+        "critical cells\n"
+        "ASCII\n"
+        "DATASET UNSTRUCTURED_GRID\n";
     // points
     ofs << "POINTS " << pts_num << " float\n";
-    for (const auto &c: cps) {
+    for (const auto& c : cps) {
         Vertex v = sc.barycenter(c);
         ofs << v.getCoordinate(0) << " " << v.getCoordinate(1) << " " << v.getCoordinate(2) << endl;
     }
 
-
     // cells: VTK_LINE (=3)
     ofs << "CELLS " << cell_num << " " << cell_num * 3 << endl;
-    for (const auto &e: edges) {
+    for (const auto& e : edges) {
         ofs << "2 " << e[0] << " " << e[1] << endl;
     }
 
@@ -666,7 +665,7 @@ void FormanGradient::xx_critical_cells_net_2d(const std::string &vtkfile, const 
     ofs << "CELL_DATA " << cell_num << endl;
     ofs << "FIELD FieldData 1\n";
     ofs << "edge_type 1 " << cell_num << " int\n";
-    for (const auto &e: edges) {
+    for (const auto& e : edges) {
         int sid1, sid2; // critical cell id, based on cps vector
         sid1 = e[0];
         sid2 = e[1];
@@ -683,19 +682,18 @@ void FormanGradient::xx_critical_cells_net_2d(const std::string &vtkfile, const 
     ofs << endl;
     ofs.close();
 
-
     //  write txt file
     ofstream ofs1(txtfile);
     ofs1 << fixed << setprecision(3);
     ofs1 << pts_num << " " << cell_num << endl;
     // points: x y z dim
-    for (const auto &c: cps) {
+    for (const auto& c : cps) {
         Vertex v = sc.barycenter(c);
         ofs1 << v.getCoordinate(0) << " " << v.getCoordinate(1) << " " << v.getCoordinate(2) << " " << c.getDim()
-                << endl;
+            << endl;
     }
     // edges
-    for (const auto &e: edges) {
+    for (const auto& e : edges) {
         ofs1 << e[0] << " " << e[1] << endl;
     }
     ofs1.close();

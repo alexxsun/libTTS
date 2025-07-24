@@ -55,7 +55,7 @@ int TopoSegment::initSeeds_mins_by_as() {
         cout << "# of stems: " << con_low_pts.size() << endl;
     }
 
-    return 0;
+    return 1;
 }
 
 
@@ -64,7 +64,7 @@ int TopoSegment::initSeeds_mins_by_trunkpts_xyz(
     const double& th_p2trunk_distance,
     const double& th_search_radius) {
     /* key ideas:
-     * default: th_p2trunk_distance = 0.2,  th_search_radius = 0.25
+     * default: th_p2trunk_distance = 0.2, th_search_radius = 0.25
      * find initial labeled mins: close to seeds.
      *  distance: min to seed pts or min to seed centroid
      *  min.z between trunk info zmin, zmax
@@ -198,7 +198,7 @@ int TopoSegment::initSeeds_mins_by_trunkpts_xyz(
         _output_gpmins_pts(gp_mins, _workspace + "/" + _file_name + "_test_mins_seed.pts", false);
     }
 
-    return 0;
+    return 1;
 }
 
 
@@ -318,7 +318,7 @@ int TopoSegment::growFromSeeds_mins_basic() {
         }
     } // label rest labels
 
-    return 0;
+    return 1;
 }
 
 

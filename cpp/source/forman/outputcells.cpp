@@ -1,17 +1,17 @@
 #include "formangradient.h"
 
-void FormanGradient::out3cells(const list<SSet> &cells, const string &outfile) {
+void FormanGradient::out3cells(const list<SSet>& cells, const string& outfile) {
     print_out(outfile.c_str(), cells, 10, 4);
 }
 
-void FormanGradient::out2cells(const list<SSet> &cells, bool desc) {
+void FormanGradient::out2cells(const list<SSet>& cells, bool desc) {
     if (desc)
         print_out("descending2cells.vtk", cells, 5, 3);
     else
         print_out("ascending2cells.vtk", cells, 5, 3);
 }
 
-void FormanGradient::out1cells(const list<SSet> &cells, bool desc) {
+void FormanGradient::out1cells(const list<SSet>& cells, bool desc) {
     if (desc)
         print_out("descending1cells.vtk", cells, 3, 2);
     else {
@@ -20,33 +20,34 @@ void FormanGradient::out1cells(const list<SSet> &cells, bool desc) {
     }
 }
 
-void FormanGradient::out0cells(const list<SSet> &cells, const string &filename) {
+void FormanGradient::out0cells(const list<SSet>& cells, const string& filename) {
     print_out((filename + "ascending0cells.vtk").c_str(), cells, 1, 1);
 }
 
-void FormanGradient::outCriticalPoints(const SSet &cells) {
-    FILE *plotlyFile = fopen("critVal.txt", "w");
+void FormanGradient::outCriticalPoints(const SSet& cells) {
+    FILE* plotlyFile = fopen("critVal.txt", "w");
     list<Vertex> coords;
-    for (auto s: cells) {
+    for (auto s : cells) {
         vector<int> vertices = s.getConstVertices();
         Vertex v = sc.getVertex(vertices[0]);
 
         vector<float> filtr = simplexScalarValue(s);
         fprintf(plotlyFile, "%f %f\n", filtr[0], filtr[1]);
 
-        for (int i = 0; i < vertices.size(); i++) v.middlePoint(sc.getVertex(vertices[i]));
+        for (int i = 0; i < vertices.size(); i++)
+            v.middlePoint(sc.getVertex(vertices[i]));
         coords.push_back(v);
     }
     fclose(plotlyFile);
 
-    FILE *file = fopen("criticalpoints.vtk", "w");
+    FILE* file = fopen("criticalpoints.vtk", "w");
 
     fprintf(file, "# vtk DataFile Version 2.0\n\n");
     fprintf(file, "ASCII \n");
     fprintf(file, "DATASET UNSTRUCTURED_GRID\n\n");
     fprintf(file, "POINTS %d float\n", coords.size());
 
-    for (auto c: coords) {
+    for (auto c : coords) {
         vector<float> coords = c.getCoordinates();
         // re-scale points in the vtk file
         fprintf(file, "%f %f %f \n", coords[0] - sc.sc_min_x, coords[1] - sc.sc_min_y, coords[2]);
@@ -58,7 +59,7 @@ void FormanGradient::outCriticalPoints(const SSet &cells) {
     fprintf(file, "FIELD FieldData 1\n");
     fprintf(file, "cp_type 1 %d float\n", coords.size());
 
-    for (auto s: cells) {
+    for (auto s : cells) {
         fprintf(file, "%d ", s.getDim());
     }
     fprintf(file, "\n\n");
@@ -68,15 +69,15 @@ void FormanGradient::outCriticalPoints(const SSet &cells) {
 
 /// Output critical points limited with 0-cells and 1-cells.
 /// \param cells: critical simplexes/cells
-void FormanGradient::outCriticalPoints_01(const SSet &cells) {
+void FormanGradient::outCriticalPoints_01(const SSet& cells) {
     list<Vertex> coords;
     list<int> cp_type;
-    for (const auto &s: cells) {
+    for (const auto& s : cells) {
         if (s.getDim() < 2) {
             vector<int> vertices = s.getConstVertices();
             Vertex v = sc.getVertex(vertices[0]);
 
-            for (int vertice: vertices) {
+            for (int vertice : vertices) {
                 v.middlePoint(sc.getVertex(vertice));
             }
             coords.push_back(v);
@@ -84,13 +85,13 @@ void FormanGradient::outCriticalPoints_01(const SSet &cells) {
         }
     }
 
-    FILE *file = fopen("criticalpoints_01.vtk", "w");
+    FILE* file = fopen("criticalpoints_01.vtk", "w");
     fprintf(file, "# vtk DataFile Version 2.0\n\n");
     fprintf(file, "ASCII \n");
     fprintf(file, "DATASET UNSTRUCTURED_GRID\n\n");
     fprintf(file, "POINTS %d float\n", coords.size());
 
-    for (auto c: coords) {
+    for (auto c : coords) {
         vector<float> v_coords = c.getCoordinates();
         fprintf(file, "%f %f %f \n", v_coords[0], v_coords[1], v_coords[2]);
     }
@@ -101,7 +102,7 @@ void FormanGradient::outCriticalPoints_01(const SSet &cells) {
     fprintf(file, "FIELD FieldData 1\n");
     fprintf(file, "cp_type 1 %d float\n", coords.size());
 
-    for (auto s: cp_type) {
+    for (auto s : cp_type) {
         fprintf(file, "%d ", s);
     }
     fprintf(file, "\n\n");
@@ -109,30 +110,32 @@ void FormanGradient::outCriticalPoints_01(const SSet &cells) {
     fclose(file);
 }
 
-void FormanGradient::print_out(const char *fileName, list<SSet> const &cells, int param, int dim) {
+void FormanGradient::print_out(const char* fileName, list<SSet> const& cells, int param, int dim) {
     map<int, int> oldToNew;
     vector<int> newToOld;
 
     int triangles = 0;
 
     int index = 0;
-    for (auto sets: cells) {
+    for (auto sets : cells) {
         triangles += sets.size();
-        for (auto s: sets) {
+        for (auto s : sets) {
             //cout<<s<<endl;
             vector<int> vertices = s.getConstVertices();
-            for (auto v: vertices) {
-                if (oldToNew.find(v) == oldToNew.end()) oldToNew[v] = index++;
+            for (auto v : vertices) {
+                if (oldToNew.find(v) == oldToNew.end())
+                    oldToNew[v] = index++;
             }
         }
     }
 
     newToOld = vector<int>(oldToNew.size());
-    for (auto v: oldToNew) newToOld[v.second] = v.first;
+    for (auto v : oldToNew)
+        newToOld[v.second] = v.first;
 
     int vertex_number = oldToNew.size();
 
-    FILE *file = fopen(fileName, "w");
+    FILE* file = fopen(fileName, "w");
 
     fprintf(file, "# vtk DataFile Version 2.0\n\n");
     fprintf(file, "ASCII \n");
@@ -148,8 +151,8 @@ void FormanGradient::print_out(const char *fileName, list<SSet> const &cells, in
 
     fprintf(file, "CELLS %d %d\n", triangles, triangles * (dim + 1));
 
-    for (auto sets: cells) {
-        for (auto c: sets) {
+    for (auto sets : cells) {
+        for (auto c : sets) {
             vector<int> vertices = c.getConstVertices();
             fprintf(file, "%d ", dim);
             for (int k = 0; k < dim; k++) {
@@ -162,7 +165,8 @@ void FormanGradient::print_out(const char *fileName, list<SSet> const &cells, in
 
     fprintf(file, "CELL_TYPES %d\n", triangles);
 
-    for (int i = 0; i < triangles; i++) fprintf(file, "%d ", param);
+    for (int i = 0; i < triangles; i++)
+        fprintf(file, "%d ", param);
     fprintf(file, "\n\n");
 
     int nFields = scalarValues[0].size();
@@ -187,8 +191,8 @@ void FormanGradient::print_out(const char *fileName, list<SSet> const &cells, in
     fprintf(file, "descending_2_cells 1 %d int \n", triangles);
 
     int reg = 0;
-    for (auto sets: cells) {
-        for (auto c: sets) {
+    for (auto sets : cells) {
+        for (auto c : sets) {
             fprintf(file, "%d ", reg);
         }
         reg++;
@@ -197,20 +201,20 @@ void FormanGradient::print_out(const char *fileName, list<SSet> const &cells, in
     fclose(file);
 }
 
-void FormanGradient::accurate_asc1cells(const list<SSet> &cells, const string &vtkfile) {
+void FormanGradient::accurate_asc1cells(const list<SSet>& cells, const string& vtkfile) {
     cout << "accurate asc1 cells\n";
     map<Vertex, int> vertices;
     list<pair<int, int> > edges; // why list?
     vector<Vertex> vord;
 
-    std::vector<std::vector<pair<int, int>>> gp_es;// grouped edges
+    std::vector<std::vector<pair<int, int> > > gp_es; // grouped edges
 
     int index = 0;
-    for (auto sets: cells) {
-        std::vector<pair<int, int>> tmp_es;
-        for (auto s: sets) {
+    for (auto sets : cells) {
+        std::vector<pair<int, int> > tmp_es;
+        for (auto s : sets) {
             //cout << "\ns " << s << endl;
-            vector<explicitS> *tri_top = sc.topStar(s);
+            vector<explicitS>* tri_top = sc.topStar(s);
             //for (const auto &tt: *tri_top) {
             //    cout << tt << endl;
             //}
@@ -292,14 +296,14 @@ void FormanGradient::accurate_asc1cells(const list<SSet> &cells, const string &v
         outfile = vtkfile;
     }
     //FILE *file = fopen("ascending1cells_correct.vtk", "w");
-    FILE *file = fopen(outfile.c_str(), "w");
+    FILE* file = fopen(outfile.c_str(), "w");
 
     fprintf(file, "# vtk DataFile Version 2.0\n\n");
     fprintf(file, "ASCII \n");
     fprintf(file, "DATASET UNSTRUCTURED_GRID\n\n");
     fprintf(file, "POINTS %d float\n", vord.size());
 
-    for (auto v: vord) {
+    for (auto v : vord) {
         fprintf(file, "%f %f %f \n", v.getCoordinate(0), v.getCoordinate(1), v.getCoordinate(2));
     }
 
@@ -307,14 +311,15 @@ void FormanGradient::accurate_asc1cells(const list<SSet> &cells, const string &v
 
     fprintf(file, "CELLS %d %d\n", edges.size(), edges.size() * 3);
 
-    for (auto e: edges) {
+    for (auto e : edges) {
         fprintf(file, "2 %d %d\n", e.first, e.second);
     }
     fprintf(file, "\n");
 
     fprintf(file, "CELL_TYPES %d\n", edges.size());
 
-    for (int i = 0; i < edges.size(); i++) fprintf(file, "3 ");
+    for (int i = 0; i < edges.size(); i++)
+        fprintf(file, "3 ");
     fprintf(file, "\n\n");
 
     fprintf(file, "CELL_DATA %d \n", edges.size());
@@ -327,7 +332,6 @@ void FormanGradient::accurate_asc1cells(const list<SSet> &cells, const string &v
         }
     }
     fprintf(file, "\n\n");
-
 
     fclose(file);
 }
@@ -396,9 +400,9 @@ void FormanGradient::accurate_asc1cells(const list<SSet> &cells, const string &v
 
 //}
 
-void FormanGradient::saveScalarFieldVTK(const char *filename) {
+void FormanGradient::saveScalarFieldVTK(const char* filename) {
     // scaled version: points are rescaled.
-    FILE *file = fopen(filename, "w");
+    FILE* file = fopen(filename, "w");
 
     fprintf(file, "# vtk DataFile Version 2.0\n\n");
     fprintf(file, "ASCII \n");
@@ -415,25 +419,26 @@ void FormanGradient::saveScalarFieldVTK(const char *filename) {
 
     int sizeTop = 0;
     int sizeIndices = 0;
-    for (auto d: sc.getTopSimplexesSet()) {
+    for (auto d : sc.getTopSimplexesSet()) {
         sizeTop += sc.getTopSimplexesNum(d);
         sizeIndices += sc.getTopSimplexesNum(d) * (d + 2);
     }
 
     fprintf(file, "CELLS %d %d\n", sizeTop, sizeIndices);
 
-    for (auto d: sc.getTopSimplexesSet()) {
-        for (auto s: sc.getTopSimplices(d)) {
+    for (auto d : sc.getTopSimplexesSet()) {
+        for (auto s : sc.getTopSimplices(d)) {
             vector<int> verts = s.getVertices();
             fprintf(file, "%d ", verts.size());
-            for (int i = 0; i < verts.size(); i++) fprintf(file, "%d ", verts[i]);
+            for (int i = 0; i < verts.size(); i++)
+                fprintf(file, "%d ", verts[i]);
             fprintf(file, "\n");
         }
     }
 
     fprintf(file, "CELL_TYPES %d\n", sizeTop);
-    for (auto d: sc.getTopSimplexesSet()) {
-        for (auto s: sc.getTopSimplices(d)) {
+    for (auto d : sc.getTopSimplexesSet()) {
+        for (auto s : sc.getTopSimplices(d)) {
             if (s.getDimension() == 1)
                 fprintf(file, "3 ");
             else if (s.getDimension() == 2)
@@ -461,8 +466,8 @@ void FormanGradient::saveScalarFieldVTK(const char *filename) {
     fclose(file);
 }
 
-void FormanGradient::saveScalarFieldVTK_OG(const char *filename) {
-    FILE *file = fopen(filename, "w");
+void FormanGradient::saveScalarFieldVTK_OG(const char* filename) {
+    FILE* file = fopen(filename, "w");
 
     fprintf(file, "# vtk DataFile Version 2.0\n\n");
     fprintf(file, "ASCII \n");
@@ -479,25 +484,26 @@ void FormanGradient::saveScalarFieldVTK_OG(const char *filename) {
 
     int sizeTop = 0;
     int sizeIndices = 0;
-    for (auto d: sc.getTopSimplexesSet()) {
+    for (auto d : sc.getTopSimplexesSet()) {
         sizeTop += sc.getTopSimplexesNum(d);
         sizeIndices += sc.getTopSimplexesNum(d) * (d + 2);
     }
 
     fprintf(file, "CELLS %d %d\n", sizeTop, sizeIndices);
 
-    for (auto d: sc.getTopSimplexesSet()) {
-        for (auto s: sc.getTopSimplices(d)) {
+    for (auto d : sc.getTopSimplexesSet()) {
+        for (auto s : sc.getTopSimplices(d)) {
             vector<int> verts = s.getVertices();
             fprintf(file, "%d ", verts.size());
-            for (int i = 0; i < verts.size(); i++) fprintf(file, "%d ", verts[i]);
+            for (int i = 0; i < verts.size(); i++)
+                fprintf(file, "%d ", verts[i]);
             fprintf(file, "\n");
         }
     }
 
     fprintf(file, "CELL_TYPES %d\n", sizeTop);
-    for (auto d: sc.getTopSimplexesSet()) {
-        for (auto s: sc.getTopSimplices(d)) {
+    for (auto d : sc.getTopSimplexesSet()) {
+        for (auto s : sc.getTopSimplices(d)) {
             if (s.getDimension() == 1)
                 fprintf(file, "3 ");
             else if (s.getDimension() == 2)

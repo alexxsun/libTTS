@@ -6,7 +6,7 @@
 // Compute DescendingCells (desCells) for the given cell (cell).
 // given cell should be a critical simplex. >=1
 // DO NOT MODFIY the code.
-void FormanGradient::computeDescendingCell(bool output, implicitS const &cell, SSet &desCells) {
+void FormanGradient::computeDescendingCell(bool output, implicitS const& cell, SSet& desCells) {
     auto foo = bind(&FormanGradient::cmpSimplexesFiltr, this, boost::placeholders::_1, boost::placeholders::_2);
     SSet cellsPath = SSet(foo);
     if (output) {
@@ -20,9 +20,9 @@ void FormanGradient::computeDescendingCell(bool output, implicitS const &cell, S
         implicitS top = qu.top();
         qu.pop();
 
-        vector<implicitS> *bd = sc.boundaryk(top, top.getDim() - 1);
+        vector<implicitS>* bd = sc.boundaryk(top, top.getDim() - 1);
 
-        for (auto s: *bd) {
+        for (auto s : *bd) {
             implicitS next;
             if (getPair(s, next)) {
                 assert(isPaired(next) && isPaired(s));
@@ -69,7 +69,7 @@ void FormanGradient::computeDescendingCell(bool output, implicitS const &cell, S
  * a descending 1-cell on saddle: a collection of edges
  * an ascending 1-cell on saddle: a collection of edges
  */
-void FormanGradient::computeAscendingCell(bool output, implicitS const &cell, SSet &ascCells) {
+void FormanGradient::computeAscendingCell(bool output, implicitS const& cell, SSet& ascCells) {
     auto foo = bind(&FormanGradient::cmpSimplexesFiltr, this, boost::placeholders::_1, boost::placeholders::_2);
     SSet cellsPath = SSet(foo);
     if (output) {
@@ -82,9 +82,9 @@ void FormanGradient::computeAscendingCell(bool output, implicitS const &cell, SS
         //        cout << "Navigo" << endl;
         implicitS top = qu.front();
         qu.pop();
-        vector<implicitS> *bd = sc.coboundaryk(top, top.getDim() + 1);
+        vector<implicitS>* bd = sc.coboundaryk(top, top.getDim() + 1);
 
-        for (auto s: *bd) {
+        for (auto s : *bd) {
             // *bd
             implicitS next;
             if (getPair(s, next)) {
@@ -114,7 +114,7 @@ void FormanGradient::computeAscendingCell(bool output, implicitS const &cell, SS
 }
 
 
-void FormanGradient::computeAscendingCell_xx(bool output, implicitS const &cell, SSet &ascCells) {
+void FormanGradient::computeAscendingCell_xx(bool output, implicitS const& cell, SSet& ascCells) {
     // diff from non-xx version.
     /* non-xx version: input vertex critical cell, output: vertex
      * xx version: input vertex critical cell, output: saddle.  input saddle critical cells, output: triangles
@@ -131,9 +131,9 @@ void FormanGradient::computeAscendingCell_xx(bool output, implicitS const &cell,
         //        cout << "Navigo" << endl;
         implicitS top = qu.front();
         qu.pop();
-        vector<implicitS> *bd = sc.coboundaryk(top, top.getDim() + 1);
+        vector<implicitS>* bd = sc.coboundaryk(top, top.getDim() + 1);
 
-        for (auto s: *bd) {
+        for (auto s : *bd) {
             // *bd
             implicitS next;
             if (getPair(s, next)) {
@@ -169,8 +169,8 @@ void FormanGradient::computeAscendingCell_xx(bool output, implicitS const &cell,
 void FormanGradient::visMorse() {
     list<SSet> descending1manifold;
     list<SSet> ascending1manifold;
-    for (auto criticalLVL: criticalS) {
-        for (implicitS c: criticalLVL.second) {
+    for (auto criticalLVL : criticalS) {
+        for (implicitS c : criticalLVL.second) {
             SSet ascending, descending;
 
             if (c.getDim() == 1) {

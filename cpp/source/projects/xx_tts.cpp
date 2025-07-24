@@ -7,24 +7,6 @@
 #include "cgal_fixed_alphashape_v2.h"
 #include "TopoSegment.h"
 
-// get directory
-string get_directory(const string& in_path) {
-    // get the absolute path
-    std::filesystem::path path = std::filesystem::absolute(in_path);
-
-    // return the parent path as a string
-    return path.parent_path().string();
-}
-
-// get filename
-string get_filename(const string& in_path) {
-    // create a path object
-    std::filesystem::path path(in_path);
-
-    // return the filename as a string
-    return path.filename().string();
-}
-
 int alpha_shape_generation(const string& infile, const double& alpha_sq_value, string& outfile) {
     string format = "off";
 
@@ -122,7 +104,7 @@ int extract_single_trees(const string& vg_mesh_file, const string& loc_file, str
 
     cout << "\nlabel pts\n";
     timer.start();
-    //outfile = ts.label_pts_from_mins(true); 
+    //outfile = ts.label_pts_from_mins(true);
     outfile = ts.label_pts_from_mins_parallel(true);
     timer.stop();
     cout << "label time: " << timer.getElapsedTimeInSec() << " s\n";

@@ -38,7 +38,7 @@ protected:
     std::vector<int> _label_points_by_grouped_mins(
         const std::map<int, std::vector<implicitS> >& gp_mins);
 
-    // Todo: parallel version of _label_points_by_grouped_mins
+    // parallel version of _label_points_by_grouped_mins
     int _label_points_by_grouped_mins_parallel(
         const std::map<int, std::vector<implicitS> >& gp_mins);
 
@@ -47,7 +47,7 @@ protected:
                           const bool& scaled);
 
     // write critical mins: xyz in vtk format
-    void _output_mins_vtk(const std::vector<implicitS>& mins, const string& vtktfile,
+    void _output_mins_vtk(const std::vector<implicitS>& mins, const string& vtkfile,
                           const bool& scaled);
 
     // write grouped critical mins (x,y,z,gid)
@@ -77,8 +77,6 @@ public:
     }
 
     // point clustering by Forman over-segmentation
-
-
     // Performs point clustering using Forman over-segmentation.
     // Returns 1 on success, throws an exception on failure.
     int cluster(std::string& out_ptsfile) {
@@ -144,8 +142,6 @@ public:
     }
 
     int get_segs_number() {
-        // Constant member functions are those functions that are denied permission to
-        // change the values of the data members of their class.
         // valid labels start from 1.
         _segs_num = 0;
         for (const auto& m : _min2lbl) {
@@ -178,16 +174,7 @@ public:
     string label_pts_from_mins_parallel(const bool& output = true);
 
     // Output functions
-    int write_results_xyzl_txt(std::string& outfile) {
-        if (outfile.empty()) {
-            outfile = _workspace + _file_name + "_lbl.pts";
-        }
-        cout << "write: " << outfile << endl;
-        _output_pts_with_label_pts(outfile, _pts_lbls, false);
-
-        return 0;
-    }
-
+    // for debug
     int write_results_xyzl_vtk(string& outfile) {
         if (outfile.empty()) {
             outfile = _workspace + _file_name + "_lbl.vtk";
@@ -202,6 +189,8 @@ public:
 
 
     // Other functions
+    // read points from text file
+    // one point per line
     int tts_read_pts_fs(const string& infile, std::vector<std::vector<float> >& ret_pts) {
         std::string line;
         ifstream fStream(infile);
