@@ -11,6 +11,16 @@ description = "A library for processing forest point clouds using TDA."
 readme = "../README.md" # Path to the main README
 requires-python = ">=3.8"  # Minimum Python version required
 
+# Python dependencies
+dependencies = [
+    "numpy",
+    "plyfile",
+    "scikit-learn",
+    "matplotlib",
+    "scipy",
+    "opencv-python-headless",
+]
+
 [tool.scikit-build]
 build.verbose = true
 logging.level = "INFO"
