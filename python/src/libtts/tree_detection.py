@@ -193,6 +193,47 @@ def detect_trees(
     
     return labeled_trees
 
+# --- Complete Workflow ---
+
+def run_tree_detection(
+    infile: str,
+    outfile: str,
+    height_min: float = 0.5,
+    height_max: float = 1.5,
+    max_dist: float = 0.1,
+    eps: float = 0.2,
+    min_samples: int = 10
+) -> str:
+    """
+    Runs the complete tree detection workflow from input file to output file.
+
+    Args:
+        infile (str): Path to the input point cloud file.
+        outfile (str): Path to save the output labeled tree points.
+        height_min (float): Minimum height of the slice to analyze.
+        height_max (float): Maximum height of the slice to analyze.
+        max_dist (float): Maximum average KNN distance for denoising.
+        eps (float): DBSCAN eps parameter.
+        min_samples (int): DBSCAN min_samples parameter.
+    Returns:
+        str: Path to the output file with labeled tree points.
+    """
+    points = _load_points(infile)
+    
+    labeled_trees = detect_trees(
+        points,
+        height_min=height_min,
+        height_max=height_max,
+        max_avg_dist=max_dist,
+        eps=eps,
+        min_samples=min_samples
+    )
+
+    if labeled_trees.shape[0] > 0:
+        _save_points(labeled_trees[:, [0, 1, 2, 4]], outfile)
+    else:
+        print("No trees were detected.")
+
 # --- Main CLI ---
 
 def main():

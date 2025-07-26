@@ -78,15 +78,24 @@ def label_points_layered_nn(points, labeled_seed_points, layer_height=1.0, max_s
     print("Layered Nearest Neighbor labeling complete.")
     # If an output file is specified, save the labels: xyzl.pts
     if out_file is not None:
-        np.savetxt(out_file, np.column_stack((points, propagated_labels)), fmt='%.3f', delimiter=' ')
-        print(f"Labels saved to {out_file}")
+        if out_file.endswith('.ply'):
+            from plyfile import PlyData, PlyElement
+            vertices = np.column_stack((points, propagated_labels))
+            vertex_element = PlyElement.describe(vertices, 'vertex', comments=['Labeled points'])
+            ply_data = PlyData([vertex_element])
+            ply_data.write(out_file)
+            print(f"Labels saved to {out_file}")
+        elif out_file.endswith('.pts'):
+            np.savetxt(out_file, np.column_stack((points, propagated_labels)), fmt='%.3f', delimiter=' ')
+            print(f"Labels saved to {out_file}")
+        else:
+            print(f"Unsupported output file format: {out_file}. Labels not saved.")
     return propagated_labels
 
 
 def label_points_region_growing(points, labeled_seed_points, search_radius=0.5, out_file=None):
     """
     Labels unlabeled points using a region growing method ordered by Z-height.
-    This version is robust to mismatches between the main point cloud and seed points.
 
     Args:
         points (np.ndarray): The target Nx3 point cloud to be labeled.
@@ -155,12 +164,65 @@ def label_points_region_growing(points, labeled_seed_points, search_radius=0.5, 
     
     # If an output file is specified, save the labels: xyzl
     if out_file is not None:
-        np.savetxt(out_file, np.column_stack((points, propagated_labels)), fmt=['%.3f', '%.3f', '%.3f', '%d'], delimiter=' ')
-        print(f"Labels saved to {out_file}")
+        if out_file.endswith('.ply'):
+            from plyfile import PlyData, PlyElement
+            vertices = np.column_stack((points, propagated_labels))
+            vertex_element = PlyElement.describe(vertices, 'vertex', comments=['Labeled points'])
+            ply_data = PlyData([vertex_element])
+            ply_data.write(out_file)
+            print(f"Labels saved to {out_file}")
+        elif out_file.endswith('.pts'):
+            np.savetxt(out_file, np.column_stack((points, propagated_labels)), fmt=['%.3f', '%.3f', '%.3f', '%d'], delimiter=' ')
+            print(f"Labels saved to {out_file}")
+        else:
+            print(f"Unsupported output file format: {out_file}. Labels not saved.")
+    else:
+        print("No output file specified, labels not saved.")
         
     return propagated_labels
 
-# ----- 
+def run_label_propagation(infile, labeled_file, method='region_growing', **kwargs):
+    """
+    Run label propagation on a point cloud using the specified method.
+    
+    Args:
+        infile (str): Path to the input point cloud file (e.g., .pts, .ply).
+        labeled_file (str): Path to the labeled seed points file (e.g., .pts, .ply).
+        method (str): The method to use for label propagation ('region_growing' or 'layered_nn').
+        **kwargs: Additional parameters for the chosen method.
+    
+    Returns:
+        np.ndarray: The labels for the input point cloud.
+    """
+    # Load the point clouds
+    if infile.endswith('.ply'):
+        from plyfile import PlyData
+        ply_data = PlyData.read(infile)
+        points = np.vstack([ply_data['vertex'][col] for col in ['x', 'y', 'z']]).T
+    elif infile.endswith('.pts'):
+        points = np.loadtxt(infile)
+    else:
+        raise ValueError(f"Unsupported input file format: {infile}")
+    
+    # Load the labeled seed points
+    if labeled_file.endswith('.ply'):
+        from plyfile import PlyData
+        ply_data = PlyData.read(labeled_file)
+        labeled_seed_points = np.vstack([ply_data['vertex'][col] for col in ['x', 'y', 'z', 'label']]).T
+    elif labeled_file.endswith('.pts'):
+        labeled_seed_points = np.loadtxt(labeled_file)
+    else:
+        raise ValueError(f"Unsupported labeled seed points file format: {labeled_file}")
+    
+    if method == 'region_growing':
+        return label_points_region_growing(points, labeled_seed_points, **kwargs)
+    elif method == 'layered_nn':
+        return label_points_layered_nn(points, labeled_seed_points, **kwargs)
+    else:
+        raise ValueError(f"Unknown method: {method}")
+
+# ----- old code -----
+# Not suggested.
 from collections import defaultdict
 def label_pts_from_core_example(pts, edges, lpts):
     # pts = defaultdict(lambda: -1)  # (x,y,z):id

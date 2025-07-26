@@ -290,6 +290,58 @@ def plot_ground_model(grid_x: np.ndarray, grid_y: np.ndarray, grid_z: np.ndarray
     print("Displaying 2D ground model plot...")
     plt.show()
 
+# --- Complete Workflow ---
+
+def run_ground_detection(
+    infile: str,
+    out_gd_file: str = None,
+    out_veg_file: str = None,
+    grid_size: float = 0.5,
+    height_threshold: float = 0.5
+) -> list[str,str]: 
+    """
+    Runs the full ground detection workflow and saves the results.
+
+    Args:
+        infile (str): Path to the input point cloud file (.pts or .txt).
+        out_gd_file (str, optional): Path to save ground points.
+        out_veg_file (str, optional): Path to save vegetation points.
+        grid_size (float): Size of the grid cells for DTM generation.
+        height_threshold (float): Height threshold to classify vegetation.
+
+    Returns:
+        A tuple containing:
+        - Path to the saved ground points file.
+        - Path to the saved vegetation points file.
+    """
+    try:
+        print(f"Loading points from {infile}...")
+        if ".pts " in infile.lower() or ".txt" in infile.lower():
+            # Load points from .pts or .txt file
+            points = np.loadtxt(infile)
+        elif ".ply" in infile.lower():
+            # Load points from .ply file
+            if not PLYFILE_ENABLED:
+                raise ImportError("plyfile library is not installed. Cannot load .ply files.")
+            ply_data = PlyData.read(infile)
+            points = np.array([list(vertex) for vertex in ply_data['vertex'].data])
+            # we only need the first three columns (x, y, z)
+            points = points[:, :3]
+    except Exception as e:
+        print(f"Error loading file: {e}")
+        return None, None
+
+    # Run the full workflow
+    classify_ground_and_vegetation(
+        points,
+        height_threshold=height_threshold,
+        out_gd_file=out_gd_file,
+        out_veg_file=out_veg_file,
+        grid_size=grid_size
+    )
+    
+    return out_gd_file, out_veg_file
+
 # --- Main CLI ---
 
 def main():

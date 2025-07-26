@@ -9,7 +9,7 @@ You can compile the library from source and have the executables `xx_tts` for pr
 
 Compilation requires CMake and a C++ compiler (e.g., g++ or clang++).
 ```
-cd libtts_project_folder
+cd libtts_project_folder/cpp
 mkdir build
 cd build
 cmake ../
@@ -18,14 +18,14 @@ make -j4
 
 Usage:
 ```
-xx_tts [options] <input_file> <output_file>
+xx_tts infile.ply/.pts alpha_value_sq -as2
+xx_tts inmesh.ply/.off tree_locations.pts -tts
 ```
 ### Python package 
 
 Install in editable mode for development:
 ```
 cd libtts_project_folder/python
-pip install -e .[dev]
 pip install --verbose -e .
 ```
 
