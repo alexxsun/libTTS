@@ -5,4 +5,5 @@
 # Except the following files
 !.gitignore
 !basic_example.ipynb
+!tutorials.ipynb
 !close_stems_3.pts

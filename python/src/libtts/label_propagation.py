@@ -159,9 +159,7 @@ def label_points_region_growing(points, labeled_seed_points, search_radius=0.5, 
                 heapq.heappush(priority_queue, (neighbor_z, neighbor_idx))
                 
     print("Z-Ordered Region Growing complete.")
-    
-    # todo: support .ply 
-    
+        
     # If an output file is specified, save the labels: xyzl
     if out_file is not None:
         if out_file.endswith('.ply'):

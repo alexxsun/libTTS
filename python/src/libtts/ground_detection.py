@@ -315,22 +315,21 @@ def run_ground_detection(
         - Path to the saved ground points file.
         - Path to the saved vegetation points file.
     """
-    try:
-        print(f"Loading points from {infile}...")
-        if ".pts " in infile.lower() or ".txt" in infile.lower():
-            # Load points from .pts or .txt file
-            points = np.loadtxt(infile)
-        elif ".ply" in infile.lower():
-            # Load points from .ply file
-            if not PLYFILE_ENABLED:
-                raise ImportError("plyfile library is not installed. Cannot load .ply files.")
-            ply_data = PlyData.read(infile)
-            points = np.array([list(vertex) for vertex in ply_data['vertex'].data])
-            # we only need the first three columns (x, y, z)
-            points = points[:, :3]
-    except Exception as e:
-        print(f"Error loading file: {e}")
-        return None, None
+ 
+    print(f"Loading points from {infile}...")
+    if ".pts" in infile.lower() or ".txt" in infile.lower():
+        # Load points from .pts or .txt file
+        points = np.loadtxt(infile)
+    elif ".ply" in infile.lower():
+        # Load points from .ply file
+        if not PLYFILE_ENABLED:
+            raise ImportError("plyfile library is not installed. Cannot load .ply files.")
+        ply_data = PlyData.read(infile)
+        points = np.array([list(vertex) for vertex in ply_data['vertex'].data])
+        # we only need the first three columns (x, y, z)
+        points = points[:, :3]
+    else:
+        raise ValueError("Unsupported file format. Please use .pts, .txt, or .ply files.")
 
     # Run the full workflow
     classify_ground_and_vegetation(

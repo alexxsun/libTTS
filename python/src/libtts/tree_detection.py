@@ -194,16 +194,17 @@ def detect_trees(
     return labeled_trees
 
 # --- Complete Workflow ---
+from typing import Optional, Union
 
 def run_tree_detection(
     infile: str,
-    outfile: str,
+    outfile: Optional[str] = None,
     height_min: float = 0.5,
     height_max: float = 1.5,
     max_dist: float = 0.1,
     eps: float = 0.2,
     min_samples: int = 10
-) -> str:
+)  -> Optional[np.ndarray]:
     """
     Runs the complete tree detection workflow from input file to output file.
 
@@ -216,10 +217,15 @@ def run_tree_detection(
         eps (float): DBSCAN eps parameter.
         min_samples (int): DBSCAN min_samples parameter.
     Returns:
-        str: Path to the output file with labeled tree points.
+        Optional[np.ndarray]: A NumPy array of labeled points (x,y,z,label) if outfile is None,
+                              otherwise None.
     """
     points = _load_points(infile)
-    
+
+    if points.shape[1] == 3: # ensure points have height
+        print("Input points only have x, y, z. Duplicating z as h for consistency.")
+        points = np.column_stack((points, points[:, 2]))
+
     labeled_trees = detect_trees(
         points,
         height_min=height_min,
@@ -230,7 +236,14 @@ def run_tree_detection(
     )
 
     if labeled_trees.shape[0] > 0:
-        _save_points(labeled_trees[:, [0, 1, 2, 4]], outfile)
+        # Conditionally save the file or return the data
+        if outfile:
+            # File-processing mode
+            _save_points(labeled_trees[:, [0, 1, 2, 4]], outfile)
+            return outfile # Return the output file path
+        else:
+            # Data-in, Data-out mode
+            return labeled_trees[:, [0, 1, 2, 4]]
     else:
         print("No trees were detected.")
 
