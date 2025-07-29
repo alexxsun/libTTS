@@ -48,7 +48,7 @@ def select_pts_per_label(pts, th_nbrs = 4, th_dis = 0.1):
                 selected_pts.append(pts[i])
         return selected_pts
 
-def extract_woody_points(infile, th_avg_dis=0.1):
+def extract_woody_points(infile, th_avg_dis=0.1, num_processes = 8):
     """
     infile: oversegmentation results, xyzl
     """
@@ -62,7 +62,7 @@ def extract_woody_points(infile, th_avg_dis=0.1):
 
     if file_ext == 'ply':
         plydata = PlyData.read(infile)
-        pts_xyzl = np.array([[x, y, z, l] for x, y, z, l in zip(plydata['vertex']['x'], plydata['vertex']['y'], plydata['vertex']['z'], plydata['l']['pt_label'])])   
+        pts_xyzl = np.array([[x, y, z, l] for x, y, z, l in zip(plydata['vertex']['x'], plydata['vertex']['y'], plydata['vertex']['z'], plydata['vertex']['label'])])   
 
     pts_num = len(pts_xyzl)
     print(f"pts #: {pts_num}")
@@ -76,7 +76,7 @@ def extract_woody_points(infile, th_avg_dis=0.1):
     print(f"labels #: {len(gpts)}")
 
 
-    num_processes = 8
+    #num_processes = 8
     
     with mp.Pool(processes=num_processes) as pool:
         # call the function for each label in parallel
@@ -84,9 +84,25 @@ def extract_woody_points(infile, th_avg_dis=0.1):
     selected_pts = [pt for pts in results for pt in pts]
     print(f"selected_pts #: {len(selected_pts)}")
 
-    outfl = f"{infile[:-4]}_woody.pts"
-    np.savetxt(outfl, selected_pts, fmt="%.3f")
-    print(f"Done. Saved to {outfl}")
+    if len(selected_pts) == 0:
+        print("No points selected. Exiting.")
+        return 
+    
+    file_ext = infile.split('.')[-1]
+    outfile = infile[:-4] + "_woody." + file_ext
+    if outfile is not None:
+        if ".pts" in outfile:
+            np.savetxt(outfile, selected_pts, fmt="%.3f")
+            return outfile
+        elif ".ply" in outfile:
+            vertex = np.array(selected_pts, dtype=[('x', 'f4'), ('y', 'f4'), ('z', 'f4'), ('label', 'i4')])
+            el = PlyElement.describe(vertex, 'vertex')
+            PlyData([el]).write(outfile)
+            return outfile
+        else:
+            print(f"Error: file extension {outfile.split('.')[-1]} not supported.")
+            return
+    return
 
 
 def downsample_points_from_mesh(infile, th_avg_dis=0.1):
@@ -96,13 +112,11 @@ def downsample_points_from_mesh(infile, th_avg_dis=0.1):
         return
 
     # Call the C++ function
-    _oversegment_tree_cpp(infile) # infile: mesh file
+    overseg_file = _oversegment_tree_cpp(infile) # infile: mesh file
 
-    overseg_file = infile[:-4] + "_lbl.pts"
-
-    # then process the overseg_file
+    # process the overseg_file
     print(f"Oversegmentation results saved to {overseg_file}")
-    extract_woody_points(overseg_file, th_avg_dis)
+    return extract_woody_points(overseg_file, th_avg_dis)
 
 def downsample_points(infile, th_alpha_sq = 0.01, th_avg_dis=0.1):
     # infile: pts file
@@ -115,14 +129,30 @@ def downsample_points(infile, th_alpha_sq = 0.01, th_avg_dis=0.1):
 
     # Call the C++ function
     as_file = _alpha_shape_cpp(infile, th_alpha_sq)
-    _oversegment_tree_cpp(as_file) # infile: mesh file
+    overseg_file = _oversegment_tree_cpp(as_file) # infile: mesh file
 
-    overseg_file = infile[:-4] + "_lbl.pts"
-
-    # then process the overseg_file
+    # process the overseg_file
     print(f"Oversegmentation results saved to {overseg_file}")
-    extract_woody_points(overseg_file, th_avg_dis)
+    return extract_woody_points(overseg_file, th_avg_dis)
     
+
+def run_downsampling(infile, input_data = "mesh", th_alpha_sq=0.01, th_avg_dis=0.1):
+    """
+    Run the downsampling process on the input file.
+    infile: pts file
+    input_data: "overseg", "mesh","pts"
+    th_alpha_sq: generate alpha shape, can also remove isolated points
+    th_avg_dis: average distance threshold for selecting woody points
+    """
+    if input_data == "overseg":
+        # infile: oversegmentation results, xyzl
+        return extract_woody_points(infile, th_avg_dis)
+    elif input_data == "mesh":
+        return downsample_points_from_mesh(infile, th_avg_dis)
+    elif input_data == "pts":
+        return downsample_points(infile, th_alpha_sq, th_avg_dis)
+    return 
+
 
 if __name__ == "__main__":
     infile = sys.argv[1] # oversegmentation results, xyzl
@@ -132,5 +162,6 @@ if __name__ == "__main__":
         th_avg_dis = float(sys.argv[2])
     print(f"th_avg_dis: {th_avg_dis}")
 
-    extract_woody_points(infile, th_avg_dis)
+    dsfile = extract_woody_points(infile, th_avg_dis)
+    print(f"{dsfile=}")
     print(f"\nDone")

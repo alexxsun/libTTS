@@ -297,7 +297,8 @@ def run_ground_detection(
     out_gd_file: str = None,
     out_veg_file: str = None,
     grid_size: float = 0.5,
-    height_threshold: float = 0.5
+    height_threshold: float = 0.5,
+    **ground_detection_params
 ) -> list[str,str]: 
     """
     Runs the full ground detection workflow and saves the results.
@@ -337,7 +338,8 @@ def run_ground_detection(
         height_threshold=height_threshold,
         out_gd_file=out_gd_file,
         out_veg_file=out_veg_file,
-        grid_size=grid_size
+        grid_size=grid_size,
+        **ground_detection_params
     )
     
     return out_gd_file, out_veg_file
