@@ -49,8 +49,8 @@ def _create_initial_grid(
     grid_z_min[unique_indices[:, 0], unique_indices[:, 1]] = min_z_values
     grid_z_min[grid_z_min == np.inf] = np.nan
 
-    grid_x_coords = np.arange(min_x, min_x + n_x * grid_size, grid_size)
-    grid_y_coords = np.arange(min_y, min_y + n_y * grid_size, grid_size)
+    grid_x_coords = min_x + np.arange(n_x) * grid_size
+    grid_y_coords = min_y + np.arange(n_y) * grid_size
     grid_x, grid_y = np.meshgrid(grid_x_coords, grid_y_coords)
 
     return grid_x, grid_y, grid_z_min

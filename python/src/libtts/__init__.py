@@ -12,7 +12,7 @@ from ._libtts import (generate_alpha_shape_cpp as generate_alpha_shape,
 
 # Import any high-level Python functions or classes to expose.
 from .ground_detection import detect_ground, calculate_height_above_ground, classify_ground_and_vegetation, plot_ground_model, run_ground_detection
-from .tree_detection import filter_tree_bases, cluster_points_dbscan, detect_trees, run_tree_detection
+from .tree_detection import filter_tree_bases, cluster_points_dbscan, run_tree_detection
 from .object_downsampling import extract_woody_points, downsample_points, downsample_points_from_mesh, run_downsampling
 from .label_propagation import label_points_layered_nn, label_points_region_growing, run_label_propagation
 
@@ -38,7 +38,6 @@ __all__ = [
     "run_ground_detection",
     "filter_tree_bases",
     "cluster_points_dbscan",
-    "detect_trees",
     "run_tree_detection",
     "extract_woody_points",
     "downsample_points",
