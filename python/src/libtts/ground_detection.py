@@ -25,7 +25,16 @@ def _create_initial_grid(
     points: np.ndarray,
     grid_size: float
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-    """Internal function to create a raw 2D grid of lowest Z points."""
+    """Internal function to create a raw 2D grid of lowest Z points.
+    Args:
+        points (np.ndarray): Nx3 array of (x, y, z) points.
+        grid_size (float): The size of each grid cell.
+    Returns:
+        tuple: A tuple containing:
+            - grid_x (np.ndarray): 2D array of X coordinates for the grid.
+            - grid_y (np.ndarray): 2D array of Y coordinates for the grid.
+            - grid_z_min (np.ndarray): 2D array of minimum Z values for each grid cell.
+    """
     points = np.asarray(points)[:, :3]
     min_x, min_y, _ = np.min(points, axis=0)
     max_x, max_y, _ = np.max(points, axis=0)

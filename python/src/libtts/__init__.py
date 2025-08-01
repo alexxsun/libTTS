@@ -13,7 +13,9 @@ from ._libtts import (generate_alpha_shape_cpp as generate_alpha_shape,
 # Import any high-level Python functions or classes to expose.
 from .ground_detection import detect_ground, calculate_height_above_ground, classify_ground_and_vegetation, plot_ground_model, run_ground_detection
 from .tree_detection import filter_tree_bases, cluster_points_dbscan, run_tree_detection
-from .object_downsampling import extract_woody_points, downsample_points, downsample_points_from_mesh, run_downsampling
+from .points_downsampling import (downsample_by_lastools, downsample_object_based, 
+                                  downsample_object_based_from_mesh, downsample_object_based_from_points, 
+                                  run_downsampling)
 from .label_propagation import label_points_layered_nn, label_points_region_growing, run_label_propagation
 
 # Define the package version in the top-level __init__.py.
@@ -39,10 +41,13 @@ __all__ = [
     "filter_tree_bases",
     "cluster_points_dbscan",
     "run_tree_detection",
-    "extract_woody_points",
-    "downsample_points",
-    "downsample_points_from_mesh",
+    ### Points downsampling
+    "downsample_by_lastools",
+    "downsample_object_based",
+    "downsample_object_based_from_mesh",
+    "downsample_object_based_from_points",
     "run_downsampling",
+    ### Label propagation
     "label_points_layered_nn",
     "label_points_region_growing",
     "run_label_propagation",

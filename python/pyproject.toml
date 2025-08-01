@@ -12,9 +12,11 @@ readme = "../README.md" # Path to the main README
 requires-python = ">=3.8"  # Minimum Python version required
 
 # Python dependencies
+# laspy[lazrs,laszip]?
 dependencies = [
     "numpy",
     "plyfile",
+    "laspy",
     "scikit-learn",
     "matplotlib",
     "scipy",
