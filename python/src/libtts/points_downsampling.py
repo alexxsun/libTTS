@@ -13,13 +13,24 @@ This script combines the functionality of both approaches into a single tool.
 Dependencies:
 - numpy
 - plyfile
-- laspy (for LAStools method)
+- laspy (for LAStools-based method)
 - scikit-learn (for object-based method)
 
 External Dependencies:
 - LAStools: Required for the 'lastools' method. The path to the 'bin'
   directory must be provided.
+
+Typical usage example:
+
+dsfile = libtts.run_downsampling(infile = infile, method = "lastools", lastools_bin = "/the_lastools_bin_path/", fraction = 0.5)
+
+dsfile = libtts.run_downsampling(infile = infile, method = "object_based", input_type = "pts", th_alpha_sq=0.01, th_avg_dis=0.1)
+
+dsfile = libtts.run_downsampling(infile = as_file, method = "object_based", input_type = "mesh", th_avg_dis=0.1)
+
+dsfile = libtts.run_downsampling(infile = overseg_file, method = "object_based", input_type = "overseg", th_avg_dis=0.1)
 """
+
 import argparse
 import multiprocessing as mp
 import numpy as np
@@ -53,7 +64,6 @@ except ImportError:
 # --- Optional C++ Module for Object-Based Method ---
 CPP_MODULE_AVAILABLE = True
 try:
-    # This is a placeholder for an actual C++ library if it exists.
     from ._libtts import get_oversegments_cpp as _oversegment_tree_cpp
     from ._libtts import generate_alpha_shape_cpp as _alpha_shape_cpp
 except ImportError:
