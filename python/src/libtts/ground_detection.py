@@ -1,6 +1,10 @@
-"""
-Functions for detecting ground points.
-Current implementation: creating a Digital Terrain Model (DTM), and classifying points as ground or vegetation.
+"""Functions for detecting ground points and classifying points (ground and vegetation).
+
+Current implementation: creating a Digital Terrain Model (DTM), and classifying points as ground or vegetation based on the height.
+
+Example:
+out_gd_file, out_veg_file = libtts.run_ground_detection(infile = infile, out_gd_file = out_gd_file, out_veg_file = out_veg_file, 
+                                                        grid_size=0.1, height_threshold = 0.5)                                                 
 """
 import argparse
 import numpy as np
@@ -26,9 +30,11 @@ def _create_initial_grid(
     grid_size: float
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Internal function to create a raw 2D grid of lowest Z points.
+    
     Args:
         points (np.ndarray): Nx3 array of (x, y, z) points.
         grid_size (float): The size of each grid cell.
+    
     Returns:
         tuple: A tuple containing:
             - grid_x (np.ndarray): 2D array of X coordinates for the grid.
@@ -70,7 +76,29 @@ def _fill_and_smooth_grid(
     outlier_std_dev: float,
     gaussian_kernel_size: int
 ) -> np.ndarray:
-    """Internal function to fill, filter, and smooth a Z-grid."""
+    """Internal function to fill, filter, and smooth a 2D grid.
+
+    This helper function performs three main operations on a copy of the input grid:
+    1.  Removes statistical outliers by replacing them with NaN.
+    2.  Fills any NaN values using linear interpolation based on valid neighbors.
+    3.  Applies a Gaussian blur to smooth the entire grid.
+
+    Args:
+        grid_z (np.ndarray): A 2D NumPy array representing the Z-values of the grid.
+            This grid may contain NaN values.
+        outlier_std_dev (float): The number of standard deviations from the mean
+            to use as a threshold for outlier removal. Any value outside
+            `mean ± outlier_std_dev * std` is replaced with NaN. If this is
+            set to 0 or less, this step is skipped.
+        gaussian_kernel_size (int): The size of the kernel for Gaussian smoothing.
+            This should be a positive, odd integer (e.g., 3, 5, 7). If this
+            is set to 0 or less, this step is skipped.
+
+    Returns:
+        np.ndarray: A new 2D NumPy array of the same shape as `grid_z` that has
+            been filtered, filled, and smoothed.
+    """
+
     processed_grid = np.copy(grid_z)
     
     if outlier_std_dev > 0:
@@ -111,7 +139,7 @@ def _save_points(
     Args:
         points_xyzh (np.ndarray): An Nx4 array of (x, y, z, h) points.
         outfile (str): The path to the output file. Format is determined by extension.
-                       Filename can contain 'xyz', 'xyh', or 'xyzh' to specify columns.
+                       Filename must contain 'xyz', 'xyh', or 'xyzh' to specify columns.
     """
     if outfile is None:
         return
@@ -298,6 +326,7 @@ def plot_ground_model(grid_x: np.ndarray, grid_y: np.ndarray, grid_z: np.ndarray
     
     print("Displaying 2D ground model plot...")
     plt.show()
+    plt.close()
 
 # --- Complete Workflow ---
 
@@ -318,6 +347,9 @@ def run_ground_detection(
         out_veg_file (str, optional): Path to save vegetation points.
         grid_size (float): Size of the grid cells for DTM generation.
         height_threshold (float): Height threshold to classify vegetation.
+        ground_detection_params include:
+            - outlier_std_dev (float): Std deviations for outlier removal.
+            - gaussian_kernel_size (int): Kernel size for smoothing.
 
     Returns:
         A tuple containing:

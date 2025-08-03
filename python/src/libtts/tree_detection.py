@@ -1,5 +1,29 @@
-"""
-Functions for detecting potential tree locations from a normalized point cloud.
+"""Functions for detecting potential tree locations from a normalized point cloud.
+
+Example:
+# simple tree detection
+tree_locfile = libtts.run_tree_detection(infile = tls_veg_file, outfile= "tree_locations.pts", 
+                                         method='base',
+                                         height_min=0.5, height_max=1.0, 
+                                         max_avg_dist=1.0,
+                                         eps=0.2, min_samples=5)
+
+# geometry-based tree detection
+tree_locfile = libtts.run_tree_detection(infile = out_ply_file, outfile= "tree_locations.pts", 
+                                         method='geometry',
+                                         height_min=0.5, height_max=1.0, 
+                                         n_neighbors_pca = 20,
+                                         max_linearity=0.2, max_knn_dist = 0.02,
+                                         eps=0.1, min_samples=20)
+
+# gridding-based tree detection
+tree_locfile = libtts.run_tree_detection(infile = ptsfile, outfile= "tree_locations_gridding.pts", 
+                                         method='grid',
+                                         height_min=0.5, height_max=1.0, 
+                                         grid_size = 0.05,
+                                         eps=0.1, min_samples=2,
+                                         does_plot=True)
+
 """
 import argparse
 import os
