@@ -1,0 +1,15 @@
+# Ignore the Sphinx build directory where the HTML and other formats are generated.
+# This entire directory is created by the 'make html' command.
+build/
+
+# Also ignore the older convention '_build' directory, just in case.
+_build/
+
+# Ignore the doctrees cache directory.
+# Sphinx uses this to store parsed documents to speed up rebuilds.
+# It is generated and should not be in version control.
+source/.doctrees/
+.doctrees/
+
+# Ignore any log files that might be generated during the build process.
+*.log

@@ -1,0 +1,16 @@
+#Dependencies required to build the Sphinx documentation
+sphinx
+sphinx-rtd-theme
+
+#Core scientific computing libraries used in the project
+numpy
+scipy
+scikit-learn
+
+#Libraries for handling point cloud file formats
+plyfile
+laspy
+
+#Libraries for visualization and image processing
+matplotlib
+opencv-python

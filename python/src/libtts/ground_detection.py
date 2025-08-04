@@ -3,9 +3,10 @@
 Current implementation: creating a Digital Terrain Model (DTM), and classifying points as ground or vegetation based on the height.
 
 Example:
-out_gd_file, out_veg_file = libtts.run_ground_detection(infile = infile, out_gd_file = out_gd_file, out_veg_file = out_veg_file, 
+    out_gd_file, out_veg_file = libtts.run_ground_detection(infile = infile, out_gd_file = out_gd_file, out_veg_file = out_veg_file, 
                                                         grid_size=0.1, height_threshold = 0.5)                                                 
 """
+
 import argparse
 import numpy as np
 from scipy.interpolate import griddata

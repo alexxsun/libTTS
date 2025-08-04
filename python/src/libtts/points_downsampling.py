@@ -1,34 +1,52 @@
-"""
-A script to downsample point clouds using two distinct methods:
-1.  LAStools-based: A random fraction of points is kept by leveraging the
-    external LAStools 'las2las' executable. This is a general-purpose
-    downsampling method.
-2.  Object-based: An algorithm for wood-leaf separation in segmented point
-    clouds. It filters points within each segment based on local point
-    density, effectively removing sparse "leaf" points and retaining dense
-    "woody" structures.
+"""Functions for downsampling point clouds using two distinct methods.
 
-This script combines the functionality of both approaches into a single tool.
+This module provides functionality to reduce the number of points in a point
+cloud file. It supports two primary strategies:
+
+1.  **LAStools-based**: A general-purpose random downsampling method that
+    uses the external LAStools 'las2las' executable.
+2.  **Object-based**: An algorithm designed for wood-leaf separation in
+    segmented point clouds. It filters points within each segment based on
+    local point density, effectively removing sparse "leaf" points while
+    retaining dense "woody" structures.
 
 Dependencies:
-- numpy
-- plyfile
-- laspy (for LAStools-based method)
-- scikit-learn (for object-based method)
+    - numpy
+    - plyfile
+    - laspy (for LAStools-based method)
+    - scikit-learn (for object-based method)
 
 External Dependencies:
-- LAStools: Required for the 'lastools' method. The path to the 'bin'
-  directory must be provided.
+    - LAStools: Required for the 'lastools' method. The path to the 'bin'
+      directory must be provided.
 
-Typical usage example:
+Example:
+    .. code-block:: python
 
-dsfile = libtts.run_downsampling(infile = infile, method = "lastools", lastools_bin = "/the_lastools_bin_path/", fraction = 0.5)
+        # LAStools-based downsampling to keep 50% of points
+        ds_file = libtts.run_downsampling(
+            method="lastools",
+            infile="input.ply",
+            lastools_bin="/path/to/lastools/bin/",
+            fraction=0.5
+        )
 
-dsfile = libtts.run_downsampling(infile = infile, method = "object_based", input_type = "pts", th_alpha_sq=0.01, th_avg_dis=0.1)
+        # Object-based downsampling on a pre-segmented point cloud
+        woody_pts_file = libtts.run_downsampling(
+            method="object_based",
+            infile="oversegmented_tree.pts",
+            input_type="overseg",
+            distance_threshold=0.1
+        )
 
-dsfile = libtts.run_downsampling(infile = as_file, method = "object_based", input_type = "mesh", th_avg_dis=0.1)
-
-dsfile = libtts.run_downsampling(infile = overseg_file, method = "object_based", input_type = "overseg", th_avg_dis=0.1)
+        # Object-based downsampling starting from a raw point cloud (requires C++ module)
+        woody_pts_file_from_raw = libtts.run_downsampling(
+            method="object_based",
+            infile="raw_tree.pts",
+            input_type="pts",
+            alpha_sq=0.01,
+            distance_threshold=0.1
+        )
 """
 
 import argparse
@@ -121,25 +139,27 @@ def _las_to_ply(las_path: str, ply_path: str):
 
 
 def downsample_by_lastools(infile: str, lastools_bin_dir: str, keep_random_fraction: float) -> str:
-    """Downsamples a PLY file by a random fraction using LAStools.
+    """Downsamples a point cloud file by a random fraction using LAStools.
 
-    This method performs a three-step process:
-    1. Converts the input PLY file to a temporary LAS file.
+    This method performs a multi-step process:
+    1. Converts the input file (.ply, .pts) to a temporary LAS file if needed.
     2. Calls the `las2las` executable to perform random downsampling.
-    3. Converts the downsampled LAS file back to a PLY file.
+    3. Converts the downsampled LAS file back to a PLY file for the final output.
 
     Args:
-        infile (str): Path to the input .PLY file.
+        infile (str): Path to the input file (.ply, .las, or .pts).
         lastools_bin_dir (str): Path to the LAStools 'bin' directory.
         keep_random_fraction (float): The fraction of points to keep (e.g., 0.1 for 10%).
 
     Returns:
-        The path to the final, downsampled .PLY output file.
+        str: The path to the final, downsampled .PLY output file.
 
     Raises:
         ImportError: If the 'laspy' library is not installed.
-        FileNotFoundError: If the 'las2las' executable is not found.
-        RuntimeError: If the 'las2las' command fails.
+        FileNotFoundError: If the 'las2las' or 'txt2las' executable is not found.
+        RuntimeError: If a LAStools command fails.
+        ValueError: If the input file format is unsupported.
+        NotImplementedError: If run on a non-Linux environment.
     """
     if 'laspy' not in sys.modules:
         raise ImportError("The 'laspy' library is required for the LAStools method. Please run 'pip install laspy'")
@@ -209,7 +229,7 @@ def _select_pts_per_label(points_in_segment: np.ndarray, th_neighbors: int, th_d
     For a given array of points (assumed to be from the same segment), this
     function calculates the k-nearest neighbors for each point. It keeps
     only those points whose average distance to its neighbors is below a
-    specified threshold.
+    specified threshold, effectively filtering for dense clusters.
 
     Args:
         points_in_segment (np.ndarray): An array of points (NxM, M>=4) belonging to one segment.
@@ -218,7 +238,7 @@ def _select_pts_per_label(points_in_segment: np.ndarray, th_neighbors: int, th_d
                              distance below this value will be kept.
 
     Returns:
-        A NumPy array of points that met the distance criteria. Returns
+        np.ndarray: A NumPy array of points that met the distance criteria. Returns
         an empty array if the input segment has fewer points than `th_neighbors`.
     """
     if len(points_in_segment) < th_neighbors:
@@ -235,8 +255,7 @@ def _select_pts_per_label(points_in_segment: np.ndarray, th_neighbors: int, th_d
 
 
 def downsample_object_based(infile: str, th_avg_dis: float, num_processes: int = 8) -> str:
-    """
-    Filters a labeled point cloud to separate woody from leafy points.
+    """Filters a labeled point cloud to separate woody from leafy points.
 
     This function reads a point cloud with labels (e.g., from an oversegmentation
     result), groups points by their label, and then filters each group in
@@ -251,11 +270,12 @@ def downsample_object_based(infile: str, th_avg_dis: float, num_processes: int =
         num_processes (int): The number of CPU cores to use for parallel processing.
 
     Returns:
-        The path to the output file containing the filtered "woody" points.
+        str: The path to the output file containing the filtered "woody" points.
 
     Raises:
         ImportError: If 'scikit-learn' is not installed.
-        ValueError: If the input file format is not supported or if no points are selected.
+        ValueError: If the input file format is not supported, if it lacks a 'label'
+                    property, or if no points are selected after filtering.
         FileNotFoundError: If the input file does not exist.
     """
     if 'sklearn' not in sys.modules:
@@ -322,8 +342,22 @@ def downsample_object_based(infile: str, th_avg_dis: float, num_processes: int =
     return outfile
 
 def downsample_object_based_from_mesh(infile, th_avg_dis=0.1):
-    """
-    run oversegmentation on mesh file, then downsample the oversegmentation results.
+    """Runs oversegmentation on a mesh file, then downsamples the result.
+
+    This function provides a workflow for mesh inputs. It first calls a C++
+    backend function to perform oversegmentation on the mesh, then passes
+    the resulting labeled point cloud to the object-based downsampler.
+
+    Args:
+        infile (str): Path to the input mesh file.
+        th_avg_dis (float): The average distance threshold passed to the
+                            final downsampling step. Defaults to 0.1.
+
+    Returns:
+        str: The path to the final "woody" points file.
+
+    Raises:
+        NotImplementedError: If the required C++ module is not available.
     """
     # use cpp function to process infile
     if not CPP_MODULE_AVAILABLE:
@@ -340,13 +374,26 @@ def downsample_object_based_from_mesh(infile, th_avg_dis=0.1):
     return downsample_object_based(overseg_file, th_avg_dis)
 
 def downsample_object_based_from_points(infile, th_alpha_sq = 0.01, th_avg_dis=0.1):
-    """
-    Run alpha shape generation and oversegmentation on a point cloud file,
-    then downsample the oversegmentation results.
-    """
-    # infile: pts file
-    # th_alpha_sq: generate alpha shape, can also remove isolated points
+    """Runs a full wood-leaf separation workflow from a raw point cloud.
 
+    This function orchestrates a multi-step C++ pipeline:
+    1. Generates an alpha shape from the raw points.
+    2. Performs oversegmentation on the resulting mesh.
+    3. Passes the labeled point cloud to the object-based downsampler.
+
+    Args:
+        infile (str): Path to the input raw point cloud file (.pts).
+        th_alpha_sq (float): Alpha squared value for alpha shape generation.
+                             Defaults to 0.01.
+        th_avg_dis (float): The average distance threshold for the final
+                            downsampling step. Defaults to 0.1.
+
+    Returns:
+        str: The path to the final "woody" points file.
+
+    Raises:
+        NotImplementedError: If the required C++ module is not available.
+    """
     # use cpp function to process infile
     if not CPP_MODULE_AVAILABLE:
         raise NotImplementedError(
@@ -370,18 +417,17 @@ def run_downsampling(method: str, **kwargs):
 
     Args:
         method (str): The downsampling method to use ('lastools' or 'object_based').
-        **kwargs: A dictionary of keyword arguments specific to the chosen method.
-                  - For 'lastools': requires 'infile', 'lastools_bin', 'fraction'.
-                  - For 'object_based': requires 'infile', 'distance_threshold',
-                    'processes', and optionally 'input_type'.
+        **kwargs: Keyword arguments for the underlying methods.
+            For 'lastools', requires: `infile` (str), `lastools_bin` (str),
+            and `fraction` (float).
+            For 'object_based', requires: `infile` (str), `input_type` (str),
+            and other optional parameters like `distance_threshold` (float).
 
     Returns:
-        The path to the output file, or None if the operation is not completed.
+        str: The path to the output file.
 
     Raises:
         ValueError: If the method is unknown or required arguments are missing.
-        NotImplementedError: If a feature requiring a C++ module is called when
-                             the module is not available.
     """
     infile = kwargs.get("infile")
     if not infile:

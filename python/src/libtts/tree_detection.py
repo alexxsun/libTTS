@@ -1,30 +1,49 @@
 """Functions for detecting potential tree locations from a normalized point cloud.
 
 Example:
-# simple tree detection
-tree_locfile = libtts.run_tree_detection(infile = tls_veg_file, outfile= "tree_locations.pts", 
-                                         method='base',
-                                         height_min=0.5, height_max=1.0, 
-                                         max_avg_dist=1.0,
-                                         eps=0.2, min_samples=5)
+    .. code-block:: python
 
-# geometry-based tree detection
-tree_locfile = libtts.run_tree_detection(infile = out_ply_file, outfile= "tree_locations.pts", 
-                                         method='geometry',
-                                         height_min=0.5, height_max=1.0, 
-                                         n_neighbors_pca = 20,
-                                         max_linearity=0.2, max_knn_dist = 0.02,
-                                         eps=0.1, min_samples=20)
+        # simple tree detection
+        tree_locfile = libtts.run_tree_detection(
+            infile="tls_veg_file.pts",
+            outfile="tree_locations.pts",
+            method='base',
+            height_min=0.5,
+            height_max=1.0,
+            max_avg_dist=1.0,
+            eps=0.2,
+            min_samples=5
+        )
 
-# gridding-based tree detection
-tree_locfile = libtts.run_tree_detection(infile = ptsfile, outfile= "tree_locations_gridding.pts", 
-                                         method='grid',
-                                         height_min=0.5, height_max=1.0, 
-                                         grid_size = 0.05,
-                                         eps=0.1, min_samples=2,
-                                         does_plot=True)
+        # geometry-based tree detection
+        tree_locfile = libtts.run_tree_detection(
+            infile="out_ply_file.ply",
+            outfile="tree_locations.pts",
+            method='geometry',
+            height_min=0.5,
+            height_max=1.0,
+            n_neighbors_pca=20,
+            max_linearity=0.2,
+            max_knn_dist=0.02,
+            eps=0.1,
+            min_samples=20
+        )
+
+        # gridding-based tree detection
+        tree_locfile = libtts.run_tree_detection(
+            infile="ptsfile.pts",
+            outfile="tree_locations_gridding.pts",
+            method='grid',
+            height_min=0.5,
+            height_max=1.0,
+            grid_size=0.05,
+            eps=0.1,
+            min_samples=2,
+            does_plot=True
+        )
 
 """
+
 import argparse
 import os
 import numpy as np
@@ -49,7 +68,22 @@ except ImportError:
 # --- Utility Functions ---
 
 def _load_points(pts_file: str) -> np.ndarray:
-    """Loads points from a .pts, .txt, or .ply file into an NxM numpy array."""
+    """Loads points from a .pts, .txt, or .ply file into an NxM numpy array.
+
+    If the input data only contains XYZ coordinates, it appends a fourth column (h) by
+    repeating the Z values.
+
+    Args:
+        pts_file (str): The path to the input file.
+
+    Returns:
+        np.ndarray: An Nx4 NumPy array containing XYZH coordinates.
+
+    Raises:
+        FileNotFoundError: If the input file does not exist.
+        ImportError: If a .ply file is provided but 'plyfile' is not installed.
+        ValueError: If the file format is not supported.
+    """
     if not os.path.exists(pts_file):
         raise FileNotFoundError(f"Input file not found: {pts_file}")
 
@@ -71,7 +105,18 @@ def _load_points(pts_file: str) -> np.ndarray:
     return points
 
 def _save_points(points: np.ndarray, outfile: str):
-    """Saves points to a file, detecting format from extension."""
+    """Saves points to a file, detecting format from extension.
+
+    The output format based on the output file's extension.
+
+    Args:
+        points (np.ndarray): The point data to save.
+        outfile (str): The path to the output file (.pts, .txt, or .ply).
+
+    Raises:
+        ImportError: If saving to .ply is requested but 'plyfile' is not installed.
+        ValueError: If the output file format is not supported.
+    """
     if outfile.lower().endswith((".pts", ".txt")):
         np.savetxt(outfile, points, fmt="%.3f")
     elif outfile.lower().endswith(".ply"):
@@ -96,8 +141,23 @@ def filter_tree_bases(
     knn: int = 4,
     max_avg_dist: float = 0.1
 ) -> np.ndarray:
-    """
-    Filters a point cloud to find dense points in a low height range.
+    """Filters a point cloud to find dense points in a low height range.
+
+    1. isolate points within a specific height slice [height_min, height_max]
+    2. filters them based on local density. The density is measured by the average distance to the k-nearest neighbors.
+
+    Args:
+        points_xyzh (np.ndarray): An Nx4 array of XYZH points.
+        height_min (float): The minimum height for the analysis slice.
+        height_max (float): The maximum height for the analysis slice.
+        knn (int): The number of nearest neighbors to consider for the density check.
+        max_avg_dist (float): The maximum average distance to the k-nearest
+            neighbors for a point to be considered dense.
+
+    Returns:
+        np.ndarray: An array of filtered points that fall within the height
+            slice and meet the density criteria. Returns an empty array if
+            no points meet the criteria.
     """
     heights = points_xyzh[:, 3]
     slice_mask = (heights >= height_min) & (heights <= height_max)
@@ -123,25 +183,35 @@ def filter_points_by_geometry(
     height_min: float = 0.5,
     height_max: float = 1.5,
     n_neighbors_pca: int = 15,
+    min_linearity: float = 0.0,
     max_linearity: float = 0.7,
     max_knn_dist: float = 0.1,
     knn_for_dist: int = 4
 ) -> np.ndarray:
-    """
-    Filters points based on local geometric properties (density and linearity)
-    using a memory-efficient k-Nearest Neighbors approach.
+    """Filters points based on local geometric properties (density and linearity).
+
+    This function identifies potential tree trunk points by analyzing the
+    geometry of each point's local neighborhood. 
+    It keeps "dense and linear" points that are < max_linearity and < max_knn_dist.
+    Note: "linearity" is between 0 and 1, where 0 is a perfect line and 1 is a plane.
 
     Args:
-        points_xyzh: Input Nx4 point cloud.
-        height_min: Minimum height for the analysis slice.
-        height_max: Maximum height for the analysis slice.
-        n_neighbors_pca: The number of neighbors to define the local neighborhood for PCA.
-        max_linearity: Threshold for linearity (1D structure). Points below this are kept.
-        max_knn_dist: Threshold for local density. Points below this are kept.
-        knn_for_dist: Number of neighbors for the final density check.
+        points_xyzh (np.ndarray): Input Nx4 point cloud (XYZH).
+        height_min (float): Minimum height for the analysis slice.
+        height_max (float): Maximum height for the analysis slice.
+        n_neighbors_pca (int): The number of neighbors to define the local
+            neighborhood for Principal Component Analysis (PCA).
+        min_linearity (float): The minmum linearity value.
+        max_linearity (float): The maximum linearity value for a point to be kept. 
+            The smaller value, the more linear the points appear.
+        max_knn_dist (float): The maximum average distance to the k-nearest
+            neighbors for a point to be considered dense.
+        knn_for_dist (int): The number of neighbors to use for the final
+            density check.
 
     Returns:
-        Filtered points that are dense and not strongly linear.
+        np.ndarray: An array of filtered points that are dense and not
+            strongly linear. Returns an empty array if no points meet the criteria.
     """
     # 1. Select points within the specified height slice
     heights = points_xyzh[:, 3]
@@ -154,8 +224,12 @@ def filter_points_by_geometry(
     
 
     # debug: save low_points for inspection
+    _should_debug = True
     debug_dir = "/home/alex/Projects/libTTS_public/some_examples/"
-    np.savetxt(f"{debug_dir}/debug_low_points.pts", low_points, fmt="%.3f")
+    if not os.path.exists(debug_dir):
+        _should_debug = False
+    if _should_debug:
+        np.savetxt(f"{debug_dir}/debug_low_points.pts", low_points, fmt="%.3f")
     print(f"# pts: {len(low_points)} in height slice {height_min} - {height_max}.")
 
     # 2. Find neighbors for all points at once
@@ -188,7 +262,7 @@ def filter_points_by_geometry(
         density_values.append(avg_knn_dist)
 
         # c) Apply filters
-        if linearity < max_linearity and avg_knn_dist < max_knn_dist:
+        if min_linearity < linearity < max_linearity and avg_knn_dist < max_knn_dist:
             points_to_keep_mask[i] = True
             
     # debug: save x,y,z, linearity and density values for inspection
@@ -208,8 +282,25 @@ def cluster_points_dbscan(
     min_samples: int = 10,
     use_2d: bool = True
 ) -> np.ndarray:
-    """
-    Clusters points using DBSCAN and returns points with cluster labels.
+    """Clusters points using DBSCAN and returns points with cluster labels.
+
+    It can perform clustering in either 2D (XY) or 3D (XYZ). Noise points
+    (as defined by DBSCAN) are discarded.
+
+    Args:
+        points (np.ndarray): The input points to cluster.
+        eps (float): The maximum distance between two samples for one to be
+            considered as in the neighborhood of the other. This is the most
+            important DBSCAN parameter.
+        min_samples (int): The number of samples in a neighborhood for a point
+            to be considered as a core point.
+        use_2d (bool): If True, clustering is performed on the first two
+            columns (XY). If False, it's performed on the first three (XYZ).
+
+    Returns:
+        np.ndarray: An array containing the original points that belong to a
+            cluster, with a new column appended for the cluster label.
+            Labels are 1-based. Returns an empty array if no clusters are found.
     """
     if points.shape[0] == 0:
         return np.array([])
@@ -232,7 +323,20 @@ def cluster_points_dbscan(
 # --- High-Level API Functions ---
 
 def detect_trees_by_base_density(points_xyzh: np.ndarray, **kwargs) -> np.ndarray:
-    """Workflow: Filters for dense points at a low height and clusters them."""
+    """Workflow to detect trees by filtering for dense points and clustering.
+
+    This high-level function orchestrates a simple tree detection workflow:
+    1. Filters points to find dense areas in a low height range.
+    2. Clusters the resulting points using DBSCAN.
+
+    Args:
+        points_xyzh (np.ndarray): The input Nx4 (XYZH) point cloud.
+        **kwargs: Keyword arguments passed to `filter_tree_bases` and
+            `cluster_points_dbscan`. See those functions for details.
+
+    Returns:
+        np.ndarray: An array of labeled tree points (x, y, z, h, label).
+    """
     filter_params = {
         "height_min": kwargs.get("height_min", 0.5),
         "height_max": kwargs.get("height_max", 1.5),
@@ -248,11 +352,25 @@ def detect_trees_by_base_density(points_xyzh: np.ndarray, **kwargs) -> np.ndarra
 
 
 def detect_trees_by_geometry(points_xyzh: np.ndarray, **kwargs) -> np.ndarray:
-    """Workflow: Filters points by local geometry (linearity/density) and clusters them."""
+    """Workflow to detect trees by filtering on geometry and clustering.
+
+    This high-level function orchestrates a geometry-based tree detection workflow:
+    1. Filters points based on local geometry (linearity and density).
+    2. Clusters the resulting points using DBSCAN.
+
+    Args:
+        points_xyzh (np.ndarray): The input Nx4 (XYZH) point cloud.
+        **kwargs: Keyword arguments passed to `filter_points_by_geometry` and
+            `cluster_points_dbscan`. See those functions for details.
+
+    Returns:
+        np.ndarray: An array of labeled tree points (x, y, z, h, label).
+    """
     filter_params = {
         "height_min": kwargs.get("height_min", 0.5),
         "height_max": kwargs.get("height_max", 1.5),
         "n_neighbors_pca": kwargs.get("n_neighbors_pca", 15),
+        "min_linearity": kwargs.get("min_linearity", 0.0),
         "max_linearity": kwargs.get("max_linearity", 0.7),
         "max_knn_dist": kwargs.get("max_knn_dist", 0.1)
     }
@@ -264,7 +382,26 @@ def detect_trees_by_geometry(points_xyzh: np.ndarray, **kwargs) -> np.ndarray:
     return cluster_points_dbscan(seed_points, **cluster_params)
 
 def detect_trees_by_gridding(points_xyzh: np.ndarray, **kwargs) -> np.ndarray:
-    """Workflow: Creates a 2D histogram, filters dense cells, and clusters them."""
+    """Workflow that uses a 2D histogram (gridding) to find and cluster trees.
+
+    This method works by:
+    1. Creating a 2D histogram of point counts in a specified height slice.
+    2. Identifying "dense" grid cells that contain many points.
+    3. Clustering these dense grid cells using DBSCAN.
+    4. Labeling the original points based on the cluster of the cell they fall into.
+
+    Args:
+        points_xyzh (np.ndarray): The input Nx4 (XYZH) point cloud.
+        **kwargs: Keyword arguments for the gridding and clustering process.
+            Relevant keys: `height_min`, `height_max`, `grid_size`,
+            `min_points_per_cell`, `eps`, `min_samples`, `does_plot`.
+
+    Returns:
+        np.ndarray: An array of labeled tree points (x, y, z, h, label).
+    
+    Raises:
+        ImportError: If `does_plot` is True but 'matplotlib' is not installed.
+    """
     # 1. Extract parameters
     height_min = kwargs.get("height_min", 0.5)
     height_max = kwargs.get("height_max", 1.0)
@@ -365,22 +502,28 @@ def run_tree_detection(
     method: str = 'base',
     **kwargs
 ) -> Optional[Union[np.ndarray, str]]:
-    """
-    Runs a complete tree detection workflow on a file.
+    """Runs a complete tree detection workflow on a file.
 
-    If an outfile is provided, it saves the result and returns the output path.
-    If outfile is None, it returns the labeled points as a NumPy array.
+    This is the main entry point function. It loads a point cloud, runs the
+    specified detection method, and either saves the result to a file or
+    returns it as a NumPy array.
 
     Args:
-        infile (str): Path to the input point cloud file.
-        outfile (str, optional): Path to save the output labeled tree points. Defaults to None.
-        method (str): The detection method to use, either 'base' or 'geometry'.
+        infile (str): Path to the input point cloud file (.pts, .txt, .ply).
+        outfile (str, optional): Path to save the output labeled tree points.
+            If None, the result is returned as an array. Defaults to None.
+        method (str): The detection method to use. One of 'base', 'geometry',
+            or 'grid'. Defaults to 'base'.
         **kwargs: Keyword arguments for the underlying detection functions.
 
     Returns:
-        Optional[Union[np.ndarray, str]]: A NumPy array of labeled points (x,y,z,label)
-                                           if outfile is None, or the output file path if
-                                           outfile is provided. Returns None on failure.
+        Optional[Union[np.ndarray, str]]: If `outfile` is None, returns a
+            NumPy array of labeled points (x,y,z,label). If `outfile` is
+            provided, returns the output file path as a string. Returns None
+            on failure or if no trees are detected and an outfile is specified.
+
+    Raises:
+        ValueError: If an unknown method is specified.
     """
     try:
         points = _load_points(infile)

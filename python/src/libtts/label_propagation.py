@@ -1,19 +1,68 @@
+"""Propagates labels from a small set of seed points to a larger point cloud.
+
+This module provides two primary methods for label propagation:
+
+1.  **Region Growing**: A method that starts from seed points and "grows"
+    regions outwards, labeling neighbors within a specified radius. It processes
+    points in ascending Z-height order to ensure a bottom-up propagation,
+    which is useful for environments like forests.
+2.  **Layered Nearest Neighbor**: A faster, more constrained method that divides
+    the point cloud into horizontal layers. It labels points in each layer
+    based on the nearest labeled seed within that same layer, but only if the
+    seed is within a maximum search radius.
+
+Example:
+    .. code-block:: python
+
+        import libtts
+
+        # Using the Z-ordered region growing method
+        labels = libtts.run_label_propagation(
+            infile="unlabeled_cloud.ply",
+            labeled_file="tree_locations.pts",
+            method='region_growing',
+            search_radius=0.5,
+            out_file="cloud_labeled_region_growing.ply"
+        )
+
+        # Using the faster, layered nearest neighbor method
+        labels_nn = libtts.run_label_propagation(
+            infile="unlabeled_cloud.ply",
+            labeled_file="tree_locations.pts",
+            method='layered_nn',
+            layer_height=1.0,
+            max_search_radius=1.0,
+            out_file="cloud_labeled_layered_nn.ply"
+        )
+
+"""
+
 import numpy as np
 from scipy.spatial import KDTree
-
 import heapq
+from plyfile import PlyData, PlyElement
 
 def label_points_layered_nn(points, labeled_seed_points, layer_height=1.0, max_search_radius=1.0, out_file=None):
-    """
-    Labels unlabeled points from labeled points using a layered Nearest Neighbor approach with a distance cap.
+    """Labels unlabeled points using a layered Nearest Neighbor approach.
+
+    This method processes the point cloud in horizontal layers from bottom to
+    top. For each layer, it finds the nearest labeled seed point for every
+    unlabeled point within that same layer. A label is only propagated if the
+    seed point is within the `max_search_radius`.
+
     Args:
-        points (np.ndarray): The target Nx3 point cloud to be labeled.
-        labeled_seed_points (np.ndarray): An Mx4 array of initially labeled points (x, y, z, label).
-        layer_height (float): The thickness of each horizontal layer.
-        max_search_radius (float): The maximum distance to a labeled point for propagation.
+        points (np.ndarray): The target Nx3 (X,Y,Z) point cloud to be labeled.
+        labeled_seed_points (np.ndarray): An Mx4 (X,Y,Z,label) array of
+            initially labeled points.
+        layer_height (float): The thickness of each horizontal layer for processing.
+        max_search_radius (float): The maximum distance to a labeled point for
+            propagation to occur.
+        out_file (str, optional): If provided, saves the final labeled points
+            (X,Y,Z,label) to this path. Supports .ply and .pts. Defaults to None.
 
     Returns:
-        np.ndarray: The array of labels for the target 'points' cloud.
+        np.ndarray: An array of shape (N,) containing the propagated labels for
+            the target 'points' cloud. Unlabeled points will have a value of -1.
     """
     print(f"Starting Layered Nearest Neighbor with layer height: {layer_height} and max radius: {max_search_radius}")
     
@@ -79,7 +128,6 @@ def label_points_layered_nn(points, labeled_seed_points, layer_height=1.0, max_s
     # If an output file is specified, save the labels: xyzl.pts
     if out_file is not None:
         if out_file.endswith('.ply'):
-            from plyfile import PlyData, PlyElement
             vertices = np.column_stack((points, propagated_labels))
             vertex_element = PlyElement.describe(vertices, 'vertex', comments=['Labeled points'])
             ply_data = PlyData([vertex_element])
@@ -94,17 +142,25 @@ def label_points_layered_nn(points, labeled_seed_points, layer_height=1.0, max_s
 
 
 def label_points_region_growing(points, labeled_seed_points, search_radius=0.5, out_file=None):
-    """
-    Labels unlabeled points using a region growing method ordered by Z-height.
+    """Labels unlabeled points using a region growing method ordered by Z-height.
+
+    This method works by starting with initial seed points and iteratively
+    "growing" their labels outwards to neighboring points. A priority queue
+    ensures that points with lower Z-coordinates are processed first, creating
+    a bottom-up labeling effect.
 
     Args:
-        points (np.ndarray): The target Nx3 point cloud to be labeled.
-        labeled_seed_points (np.ndarray): An Mx4 array of initially labeled points (x, y, z, label).
-        search_radius (float): The distance to consider points as "connected".
-        out_file (str, optional): If provided, saves the final labeled points to this path.
+        points (np.ndarray): The target Nx3 (X,Y,Z) point cloud to be labeled.
+        labeled_seed_points (np.ndarray): An Mx4 (X,Y,Z,label) array of
+            initially labeled points.
+        search_radius (float): The maximum distance to consider points as
+            "connected" neighbors for region growing.
+        out_file (str, optional): If provided, saves the final labeled points
+            (X,Y,Z,label) to this path. Supports .ply and .pts. Defaults to None.
 
     Returns:
-        np.ndarray: The array of labels for the target 'points' cloud.
+        np.ndarray: An array of shape (N,) containing the propagated labels for
+            the target 'points' cloud. Unlabeled points will have a value of -1.
     """
     print(f"Starting Z-Ordered Region Growing with radius: {search_radius}")
 
@@ -163,7 +219,6 @@ def label_points_region_growing(points, labeled_seed_points, search_radius=0.5, 
     # If an output file is specified, save the labels: xyzl
     if out_file is not None:
         if out_file.endswith('.ply'):
-            from plyfile import PlyData, PlyElement
             vertices = np.column_stack((points, propagated_labels))
             vertex_element = PlyElement.describe(vertices, 'vertex', comments=['Labeled points'])
             ply_data = PlyData([vertex_element])
@@ -180,21 +235,29 @@ def label_points_region_growing(points, labeled_seed_points, search_radius=0.5, 
     return propagated_labels
 
 def run_label_propagation(infile, labeled_file, method='region_growing', **kwargs):
-    """
-    Run label propagation on a point cloud using the specified method.
-    
+    """Runs label propagation on a point cloud using the specified method.
+
+    This high-level function loads the necessary point cloud files and dispatches
+    to the appropriate labeling algorithm.
+
     Args:
-        infile (str): Path to the input point cloud file (e.g., .pts, .ply).
-        labeled_file (str): Path to the labeled seed points file (e.g., .pts, .ply).
-        method (str): The method to use for label propagation ('region_growing' or 'layered_nn').
-        **kwargs: Additional parameters for the chosen method.
-    
+        infile (str): Path to the input point cloud file to be labeled (.pts or .ply).
+        labeled_file (str): Path to the file containing the labeled seed points
+            (.pts or .ply with X,Y,Z,label).
+        method (str): The method to use for label propagation. One of
+            'region_growing' or 'layered_nn'. Defaults to 'region_growing'.
+        **kwargs: Additional keyword arguments to be passed to the chosen
+            labeling function (e.g., `search_radius`, `layer_height`).
+
     Returns:
-        np.ndarray: The labels for the input point cloud.
+        np.ndarray: The array of labels for the input point cloud.
+
+    Raises:
+        ValueError: If an unsupported file format or method is provided.
+        FileNotFoundError: If either input file cannot be found.
     """
     # Load the point clouds
     if infile.endswith('.ply'):
-        from plyfile import PlyData
         ply_data = PlyData.read(infile)
         points = np.vstack([ply_data['vertex'][col] for col in ['x', 'y', 'z']]).T
     elif infile.endswith('.pts'):
@@ -204,7 +267,6 @@ def run_label_propagation(infile, labeled_file, method='region_growing', **kwarg
     
     # Load the labeled seed points
     if labeled_file.endswith('.ply'):
-        from plyfile import PlyData
         ply_data = PlyData.read(labeled_file)
         labeled_seed_points = np.vstack([ply_data['vertex'][col] for col in ['x', 'y', 'z', 'label']]).T
     elif labeled_file.endswith('.pts'):

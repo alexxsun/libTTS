@@ -5,9 +5,11 @@ This project is currently under active development.
 The API and features are likely to change frequently, so please check back often for updates.
 
 ### Cpp library
-You can compile the library from source and have the executables `xx_tts` for processing point clouds.
 
-Compilation requires CMake and a C++ compiler (e.g., g++ or clang++).
+CGAL library is required for the C++ library.
+
+You can compile the library from source and have the executables `xx_tts` for processing point clouds.
+Compilation requires CMake and a C++ compiler (e.g., g++ or clang++). 
 ```
 cd libtts_project_folder/cpp
 mkdir build
@@ -43,25 +45,47 @@ Source code
 
 ```
 libtts_project/
-├── cpp/                     # All C++ code lives here
-│   ├── src/                 # All core C++ library source files (.cpp, .h)
-│   ├── bindings/            # C++ code specifically for Python bindings
-│   │   └── bindings.cpp
-│   └── CMakeLists.txt       # CMake file for building ONLY the C++ part
-│
-├── python/                  # All Python code lives here
-│   ├── pyproject.toml       # Configuration for the Python package build
-│   └── src/
-│       └── libtts/          # The Python package source
-│           ├── __init__.py
-│           └── analysis.py
-│
-├── some_examples/
-|
-└── README.md
+├── cpp/                     # Top-level directory for all C++ code
+│   ├── bindings/            # C++ code for Python bindings (pybind11)
+│   │   └── bindings.cpp
+│   ├── CMakeLists.txt       # Build script for the C++ library
+│   ├── data/                # Needed C++ data files
+│   └── source/              # Core C++ library source files (.cpp, .h)
+├── python/                  # Top-level directory for the Python package
+│   ├── docs/                # Sphinx documentation source
+│   │   ├── build/           # Compiled documentation (e.g., HTML files)
+│   │   └── source/          # Sphinx configuration and .rst files
+│   │       ├── api.rst
+│   │       ├── conf.py
+│   │       └── index.rst
+│   ├── pyproject.toml       # Python package build configuration
+│   ├── src/                 # Main Python source code directory
+│   │   └── libtts/          # The Python package itself
+│   │       ├── __init__.py
+│   │       ├── ground_detection.py
+│   │       ├── label_propagation.py
+│   │       ├── points_downsampling.py
+│   │       └── tree_detection.py
+│   └── tests/               #
+├── some_examples/           # Example scripts and data
+├── README.md                # This file
+└── LICENSE                  # Project license file
 ```
 
 After the installation using `pip`,  the package and files will be located at in the Python `site-packages` folder.
+
+### Ducumentation
+Local documentation is available in the `docs/` folder.
+And run
+```
+cd libtts_project_folder/docs
+make html
+```
+to generate the HTML documentation.
+The generated documentation will be available in `docs/build/html/index.html`.
+
+You can also view the documentation online at [libTTS Documentation](...).
+
 
 ### Citation
 The methods implemented in this library are described in the following publications. 

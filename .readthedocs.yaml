@@ -1,0 +1,32 @@
+# .readthedocs.yaml
+# Read the Docs configuration file
+# See https://docs.readthedocs.io/en/stable/config-file/v2.html for details
+
+version: 2
+
+# Set the version of Python and other tools you might need
+build:
+  os: ubuntu-22.04
+  tools:
+    python: "3.12"
+    # If your C++ build has other dependencies, you can install them here
+    apt_packages:
+       - cmake
+       - libcgal-dev
+
+# Set the project's working directory for the build steps
+base: python
+
+# Tell Read the Docs where your Sphinx configuration is
+sphinx:
+  configuration: docs/source/conf.py
+
+# Define the steps to install your Python package and its dependencies
+python:
+  install:
+    # This step installs your project. It is CRITICAL that this command
+    # also triggers the compilation of your C++ (_libtts) module.
+    - method: pip
+      path: .
+    # This installs the documentation-specific packages like Sphinx
+    - requirements: docs/requirements.txt
