@@ -84,7 +84,7 @@ make html
 to generate the HTML documentation.
 The generated documentation will be available in `docs/build/html/index.html`.
 
-You can also view the documentation online at [libTTS Documentation](...).
+You can also view the documentation online at [libTTS Documentation](https://libtts.readthedocs.io/en/latest/).
 
 
 ### Citation
