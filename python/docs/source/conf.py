@@ -14,8 +14,17 @@ release = '0.01'
 # -- Configuration ---------------------------------------------------
 import os
 import sys
-sys.path.insert(0, os.path.abspath('../../src'))
+#sys.path.insert(0, os.path.abspath('../../src'))
+# needed for editable installment
 sys.path.insert(0, os.path.abspath('../../../build/cp312-cp312-linux_x86_64'))
+import importlib.util
+
+# Try to locate the installed libtts module
+spec = importlib.util.find_spec("libtts")
+if spec and spec.origin:
+    libtts_dir = os.path.dirname(spec.origin)
+    print("libtts_dir:", libtts_dir)
+    sys.path.insert(0, libtts_dir)
 
 
 # -- General configuration ---------------------------------------------------
