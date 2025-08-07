@@ -12,10 +12,7 @@ The API and features are likely to change frequently, so please check back often
 $ conda create -n libtts_env python=3.12
 # or if you want to create it in a specific path
 $ conda create -p /path/to/your/pyenvs/libtts_env python=3.12
-```
-
 # Activate the new environment
-```
 $ conda activate libtts_env
 # Install CGAL and other C++ dependencies from conda-forge
 $ conda install -c conda-forge cmake boost cgal-cpp cxx-compiler
