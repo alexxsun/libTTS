@@ -89,7 +89,8 @@ PYBIND11_MODULE(_libtts, m) {
                 infile (str): Path to the input mesh file (.ply or .off).
             
             Returns:
-                str: The path to the output file containing the segmented point
+                str: 
+                    The path to the output file containing the segmented point
                     cloud with labels.
             )doc",
           py::arg("infile")
@@ -106,15 +107,17 @@ PYBIND11_MODULE(_libtts, m) {
             
             Args:
                 vg_mesh_file (str): Path to the input vegetation mesh file.
-                loc_file (str): Path to a file containing the X,Y,Z,L locations of
-                    the tree trunks to be segmented.
+                loc_file (str): Path to a file containing the tree locations of
+                    the tree trunks to be segmented. File format is expected to be
+                    a text file with each line containing the x y z l.
                 th_p2trunk_distance (float): The maximum distance a point can be
-                    from a trunk to be considered part of that tree. Defaults to 0.2.
-                th_search_radius (float): The search radius used during the
-                    segmentation process. Defaults to 0.25.
+                    from a trunk surface to be considered part of that tree. Defaults to 0.2.
+                th_search_radius (float): The maximum distance a point can be
+                    from a trunk center to be considered part of that tree. Defaults to 0.25.
             
             Returns:
-                str: The path to the output file containing the points for all
+                str: 
+                    The path to the output file containing the points for all
                     extracted single trees, likely with labels.
             )doc",
           py::arg("vg_mesh_file"),

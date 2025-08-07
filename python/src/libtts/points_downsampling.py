@@ -142,6 +142,7 @@ def downsample_by_lastools(infile: str, lastools_bin_dir: str, keep_random_fract
     """Downsamples a point cloud file by a random fraction using LAStools.
 
     This method performs a multi-step process:
+
     1. Converts the input file (.ply, .pts) to a temporary LAS file if needed.
     2. Calls the `las2las` executable to perform random downsampling.
     3. Converts the downsampled LAS file back to a PLY file for the final output.
@@ -377,6 +378,7 @@ def downsample_object_based_from_points(infile, th_alpha_sq = 0.01, th_avg_dis=0
     """Runs a full wood-leaf separation workflow from a raw point cloud.
 
     This function orchestrates a multi-step C++ pipeline:
+
     1. Generates an alpha shape from the raw points.
     2. Performs oversegmentation on the resulting mesh.
     3. Passes the labeled point cloud to the object-based downsampler.
@@ -421,7 +423,7 @@ def run_downsampling(method: str, **kwargs):
             For 'lastools', requires: `infile` (str), `lastools_bin` (str),
             and `fraction` (float).
             For 'object_based', requires: `infile` (str), `input_type` (str),
-            and other optional parameters like `distance_threshold` (float).
+            and `th_avg_dis` (float).
 
     Returns:
         str: The path to the output file.

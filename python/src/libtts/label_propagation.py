@@ -36,13 +36,19 @@ Example:
         )
 
 """
-
+from typing import Optional
 import numpy as np
 from scipy.spatial import KDTree
 import heapq
 from plyfile import PlyData, PlyElement
 
-def label_points_layered_nn(points, labeled_seed_points, layer_height=1.0, max_search_radius=1.0, out_file=None):
+def label_points_layered_nn(
+    points: np.ndarray,
+    labeled_seed_points: np.ndarray,
+    layer_height: float = 1.0,
+    max_search_radius: float = 1.0,
+    out_file: Optional[str] = None
+) -> np.ndarray:
     """Labels unlabeled points using a layered Nearest Neighbor approach.
 
     This method processes the point cloud in horizontal layers from bottom to
@@ -61,7 +67,8 @@ def label_points_layered_nn(points, labeled_seed_points, layer_height=1.0, max_s
             (X,Y,Z,label) to this path. Supports .ply and .pts. Defaults to None.
 
     Returns:
-        np.ndarray: An array of shape (N,) containing the propagated labels for
+        np.ndarray: 
+            An array of shape (N,) containing the propagated labels for
             the target 'points' cloud. Unlabeled points will have a value of -1.
     """
     print(f"Starting Layered Nearest Neighbor with layer height: {layer_height} and max radius: {max_search_radius}")
@@ -141,7 +148,12 @@ def label_points_layered_nn(points, labeled_seed_points, layer_height=1.0, max_s
     return propagated_labels
 
 
-def label_points_region_growing(points, labeled_seed_points, search_radius=0.5, out_file=None):
+def label_points_region_growing(
+    points: np.ndarray,
+    labeled_seed_points: np.ndarray,
+    search_radius: float = 0.5,
+    out_file: Optional[str] = None
+) -> np.ndarray:
     """Labels unlabeled points using a region growing method ordered by Z-height.
 
     This method works by starting with initial seed points and iteratively
@@ -159,7 +171,8 @@ def label_points_region_growing(points, labeled_seed_points, search_radius=0.5, 
             (X,Y,Z,label) to this path. Supports .ply and .pts. Defaults to None.
 
     Returns:
-        np.ndarray: An array of shape (N,) containing the propagated labels for
+        np.ndarray: 
+            An array of shape (N,) containing the propagated labels for
             the target 'points' cloud. Unlabeled points will have a value of -1.
     """
     print(f"Starting Z-Ordered Region Growing with radius: {search_radius}")
@@ -234,7 +247,12 @@ def label_points_region_growing(points, labeled_seed_points, search_radius=0.5, 
         
     return propagated_labels
 
-def run_label_propagation(infile, labeled_file, method='region_growing', **kwargs):
+def run_label_propagation(
+    infile: str,
+    labeled_file: str,
+    method: str = 'region_growing',
+    **kwargs
+) -> np.ndarray:
     """Runs label propagation on a point cloud using the specified method.
 
     This high-level function loads the necessary point cloud files and dispatches

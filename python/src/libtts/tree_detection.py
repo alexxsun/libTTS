@@ -155,7 +155,8 @@ def filter_tree_bases(
             neighbors for a point to be considered dense.
 
     Returns:
-        np.ndarray: An array of filtered points that fall within the height
+        np.ndarray: 
+            An array of filtered points that fall within the height
             slice and meet the density criteria. Returns an empty array if
             no points meet the criteria.
     """
@@ -192,7 +193,8 @@ def filter_points_by_geometry(
 
     This function identifies potential tree trunk points by analyzing the
     geometry of each point's local neighborhood. 
-    It keeps "dense and linear" points that are < max_linearity and < max_knn_dist.
+    It keeps "dense and linear" points that are (min_linearity, max_linearity) 
+    and < max_knn_dist.
     Note: "linearity" is between 0 and 1, where 0 is a perfect line and 1 is a plane.
 
     Args:
@@ -210,8 +212,9 @@ def filter_points_by_geometry(
             density check.
 
     Returns:
-        np.ndarray: An array of filtered points that are dense and not
-            strongly linear. Returns an empty array if no points meet the criteria.
+        np.ndarray: 
+            An array of filtered points that are dense and not strongly linear. 
+            Returns an empty array if no points meet the criteria.
     """
     # 1. Select points within the specified height slice
     heights = points_xyzh[:, 3]
@@ -290,17 +293,17 @@ def cluster_points_dbscan(
     Args:
         points (np.ndarray): The input points to cluster.
         eps (float): The maximum distance between two samples for one to be
-            considered as in the neighborhood of the other. This is the most
-            important DBSCAN parameter.
+            considered as in the neighborhood of the other. 
         min_samples (int): The number of samples in a neighborhood for a point
             to be considered as a core point.
         use_2d (bool): If True, clustering is performed on the first two
             columns (XY). If False, it's performed on the first three (XYZ).
 
     Returns:
-        np.ndarray: An array containing the original points that belong to a
+        np.ndarray: 
+            An array containing the original points that belong to a
             cluster, with a new column appended for the cluster label.
-            Labels are 1-based. Returns an empty array if no clusters are found.
+            Labels start from 1. Returns an empty array if no clusters are found.
     """
     if points.shape[0] == 0:
         return np.array([])
@@ -325,7 +328,8 @@ def cluster_points_dbscan(
 def detect_trees_by_base_density(points_xyzh: np.ndarray, **kwargs) -> np.ndarray:
     """Workflow to detect trees by filtering for dense points and clustering.
 
-    This high-level function orchestrates a simple tree detection workflow:
+    This high-level function follows a simple tree detection workflow:
+
     1. Filters points to find dense areas in a low height range.
     2. Clusters the resulting points using DBSCAN.
 
@@ -354,7 +358,8 @@ def detect_trees_by_base_density(points_xyzh: np.ndarray, **kwargs) -> np.ndarra
 def detect_trees_by_geometry(points_xyzh: np.ndarray, **kwargs) -> np.ndarray:
     """Workflow to detect trees by filtering on geometry and clustering.
 
-    This high-level function orchestrates a geometry-based tree detection workflow:
+    This high-level function follows a geometry-based tree detection workflow:
+
     1. Filters points based on local geometry (linearity and density).
     2. Clusters the resulting points using DBSCAN.
 
@@ -385,6 +390,7 @@ def detect_trees_by_gridding(points_xyzh: np.ndarray, **kwargs) -> np.ndarray:
     """Workflow that uses a 2D histogram (gridding) to find and cluster trees.
 
     This method works by:
+
     1. Creating a 2D histogram of point counts in a specified height slice.
     2. Identifying "dense" grid cells that contain many points.
     3. Clustering these dense grid cells using DBSCAN.
@@ -392,9 +398,18 @@ def detect_trees_by_gridding(points_xyzh: np.ndarray, **kwargs) -> np.ndarray:
 
     Args:
         points_xyzh (np.ndarray): The input Nx4 (XYZH) point cloud.
-        **kwargs: Keyword arguments for the gridding and clustering process.
-            Relevant keys: `height_min`, `height_max`, `grid_size`,
-            `min_points_per_cell`, `eps`, `min_samples`, `does_plot`.
+        height_min (float): The minimum height for the analysis slice. Default is 0.5.
+        height_max (float): The maximum height for the analysis slice. Default is 1.0.
+        grid_size (float): The size of each grid cell in meters. Default is 0.05.
+        min_points_per_cell (int): The minimum number of points required in a
+            grid cell to consider it "dense". Default is 100.
+        eps (float): The maximum distance between two samples for one to be
+            considered as in the neighborhood of the other (DBSCAN parameter).
+            Default is 0.1.
+        min_samples (int): The number of samples in a neighborhood for a point
+            to be considered as a core point (DBSCAN parameter). Default is 2.
+        does_plot (bool): If True, plots the histogram of selected grid cells.
+            Default is False.
 
     Returns:
         np.ndarray: An array of labeled tree points (x, y, z, h, label).
@@ -517,7 +532,8 @@ def run_tree_detection(
         **kwargs: Keyword arguments for the underlying detection functions.
 
     Returns:
-        Optional[Union[np.ndarray, str]]: If `outfile` is None, returns a
+        Optional[Union[np.ndarray, str]]: 
+            If `outfile` is None, returns a
             NumPy array of labeled points (x,y,z,label). If `outfile` is
             provided, returns the output file path as a string. Returns None
             on failure or if no trees are detected and an outfile is specified.

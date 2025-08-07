@@ -3,8 +3,7 @@
 Current implementation: creating a Digital Terrain Model (DTM), and classifying points as ground or vegetation based on the height.
 
 Example:
-    out_gd_file, out_veg_file = libtts.run_ground_detection(infile = infile, out_gd_file = out_gd_file, out_veg_file = out_veg_file, 
-                                                        grid_size=0.1, height_threshold = 0.5)                                                 
+    out_gd_file, out_veg_file = libtts.run_ground_detection(infile = infile, out_gd_file = out_gd_file, out_veg_file = out_veg_file, grid_size=0.1, height_threshold = 0.5)                                                 
 """
 
 import argparse
@@ -189,7 +188,8 @@ def detect_ground(
         gaussian_kernel_size (int): Kernel size for smoothing.
 
     Returns:
-        A tuple containing:
+        tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]: A tuple containing:
+
         - ground_model_points (np.ndarray): Mx3 array of the final ground grid points.
         - grid_x (np.ndarray): 2D array of X coordinates for the grid.
         - grid_y (np.ndarray): 2D array of Y coordinates for the grid.
@@ -273,9 +273,10 @@ def classify_ground_and_vegetation(
                                    e.g., grid_size=0.5.
 
     Returns:
-        A tuple containing:
-        - ground_points (np.ndarray): Nx3 array of points classified as ground.
-        - veg_points (np.ndarray): Mx3 array of points classified as vegetation.
+        tuple[np.ndarray, np.ndarray]: A tuple containing two numpy arrays:
+
+            - The first element contains the points classified as ground (Nx3).
+            - The second element contains the points classified as vegetation (Mx3).
     """
     _, grid_x, grid_y, grid_z = detect_ground(points, **ground_detection_params)
     
@@ -353,7 +354,9 @@ def run_ground_detection(
             - gaussian_kernel_size (int): Kernel size for smoothing.
 
     Returns:
-        A tuple containing:
+       list[str,str]: 
+        A list containing:
+        
         - Path to the saved ground points file.
         - Path to the saved vegetation points file.
     """

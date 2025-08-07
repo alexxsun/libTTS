@@ -4,6 +4,65 @@
 This project is currently under active development. 
 The API and features are likely to change frequently, so please check back often for updates.
 
+### Quick Start
+
+1. Set up Conda Environment
+```
+# Create a new conda environment (e.g., named 'libtts_env') with Python 3.12
+$ conda create -n libtts_env python=3.12
+# or if you want to create it in a specific path
+$ conda create -p /path/to/your/pyenvs/libtts_env python=3.12
+```
+
+# Activate the new environment
+```
+$ conda activate libtts_env
+# Install CGAL and other C++ dependencies from conda-forge
+$ conda install -c conda-forge cmake boost cgal-cpp cxx-compiler
+```
+
+2. Clone the Repository
+```
+$ git clone https://github.com/alexxsun/libTTS
+$ cd libTTS
+```
+
+3. Install the Python Package
+```
+$ cd python/
+$ pip install .
+```
+
+4. Run a Quick Test
+```
+$ cd ../some_examples/
+$ python quick_test.py
+```
+
+5. Clean Up (Optional)
+```
+# Deactivate the current environment
+$ conda deactivate
+# Remove the environment and all its packages
+$ conda env remove -n libtts_env
+```
+
+
+### Dependencies
+
+C++:
+- C++ compiler (e.g., g++, clang++)
+- CMake 
+- Boost 
+- CGAL 
+
+Python:
+- check the `pyproject.toml` file for the Python package dependencies.
+
+Bindings:
+- pybind11 (for C++ to Python bindings)
+
+
 ### Cpp library
 
 CGAL library is required for the C++ library.
@@ -18,11 +77,12 @@ cmake ../
 make -j4
 ```
 
-Usage:
+Example usage:
 ```
 xx_tts infile.ply/.pts alpha_value_sq -as2
 xx_tts inmesh.ply/.off tree_locations.pts -tts
 ```
+
 ### Python package 
 
 Install in editable mode for development:
@@ -76,6 +136,11 @@ After the installation using `pip`,  the package and files will be located at in
 
 ### Ducumentation
 Local documentation is available in the `docs/` folder.
+
+Need to install Sphinx and the necessary dependencies:
+- sphinx
+- sphinx-rtd-theme
+
 And run
 ```
 cd libtts_project_folder/docs
