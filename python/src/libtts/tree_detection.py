@@ -59,6 +59,12 @@ except ImportError:
     PLYFILE_ENABLED = False
 
 try:
+    import laspy
+    LASFILE_ENABLED = True
+except ImportError:
+    LASFILE_ENABLED = False
+
+try:
     import matplotlib.pyplot as plt
     PLOTTING_ENABLED = True
 except ImportError:
@@ -68,7 +74,7 @@ except ImportError:
 # --- Utility Functions ---
 
 def _load_points(pts_file: str) -> np.ndarray:
-    """Loads points from a .pts, .txt, or .ply file into an NxM numpy array.
+    """Loads points from a .pts, .txt, ,las, or .ply file into an NxM numpy array.
 
     If the input data only contains XYZ coordinates, it appends a fourth column (h) by
     repeating the Z values.
@@ -96,8 +102,19 @@ def _load_points(pts_file: str) -> np.ndarray:
         vertices = ply_data['vertex']
         data = [vertices['x'], vertices['y'], vertices['z'], vertices['h']]
         points = np.vstack(data).T
+    elif pts_file.lower().endswith(".las"):
+        if not LASFILE_ENABLED:
+            raise ImportError("The 'laspy' library is required to read .las files.")
+        las = laspy.read(pts_file)
+        # Check if 'h' exists as an attribute on the loaded data
+        if hasattr(las, 'h'):
+            print("Found 'h' attribute in .las file.")
+            points = np.vstack((las.x, las.y, las.z, las.h)).T
+        else:
+            print("Warning: 'h' attribute not found in .las file. Using z as h.")
+            points = np.vstack((las.x, las.y, las.z, las.z)).T
     else:
-        raise ValueError("Unsupported file format. Please use .pts, .txt, or .ply.")
+        raise ValueError("Unsupported file format. Please use .pts, .txt, .las, or .ply.")
 
     if points.shape[1] == 3:
         print(f"xyz -> xyzz: repeating z as h.")
@@ -117,6 +134,7 @@ def _save_points(points: np.ndarray, outfile: str):
         ImportError: If saving to .ply is requested but 'plyfile' is not installed.
         ValueError: If the output file format is not supported.
     """
+    # todo: support .las output.
     if outfile.lower().endswith((".pts", ".txt")):
         np.savetxt(outfile, points, fmt="%.3f")
     elif outfile.lower().endswith(".ply"):

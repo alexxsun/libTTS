@@ -23,6 +23,12 @@ try:
 except ImportError:
     PLYFILE_ENABLED = False
 
+try:
+    import laspy
+    LASPY_ENABLED = True
+except ImportError:
+    LASPY_ENABLED = False
+
 # --- Core Algorithm Functions ---
 
 def _create_initial_grid(
@@ -167,6 +173,23 @@ def _save_points(
         el = PlyElement.describe(vertex, 'vertex')
         PlyData([el]).write(outfile)
         print(f"Saved {len(data_to_save)} points to {outfile}")
+    elif outfile.lower().endswith(".las") or outfile.lower().endswith(".laz"):
+        if not LASPY_ENABLED:
+            print("Warning: laspy library is not installed. Cannot save .las or .laz file.")
+            return
+        
+        header = laspy.LasHeader(point_format=3, version="1.2")
+        num_dims = points_xyzh.shape[1]
+        if num_dims == 4:
+            header.add_extra_dim(laspy.ExtraBytesParams(name="h", type=np.float32))
+        las = laspy.LasData(header)
+        las.x = data_to_save[:, 0]
+        las.y = data_to_save[:, 1]
+        las.z = data_to_save[:, 2]
+        if num_dims == 4:
+            las.h = data_to_save[:, 3]
+        las.write(outfile)
+        print(f"Saved {len(data_to_save)} points to las file (ver 1.2)\n{outfile}")
     else:
         print(f"Warning: Unknown output file format for {outfile}. Supported formats: .pts, .txt, .ply")
 
@@ -373,8 +396,14 @@ def run_ground_detection(
         points = np.array([list(vertex) for vertex in ply_data['vertex'].data])
         # we only need the first three columns (x, y, z)
         points = points[:, :3]
+    elif ".las" in infile.lower() or ".laz" in infile.lower():
+        # Load points from .las or .laz file
+        if not LASPY_ENABLED:
+            raise ImportError("laspy library is not installed. Cannot load .las or .laz files.")
+        las = laspy.read(infile)
+        points = np.vstack((las.x, las.y, las.z)).T
     else:
-        raise ValueError("Unsupported file format. Please use .pts, .txt, or .ply files.")
+        raise ValueError("Unsupported file format. Please use .pts, .txt, .las, or .ply files.")
 
     # Run the full workflow
     classify_ground_and_vegetation(

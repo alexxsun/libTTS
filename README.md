@@ -52,6 +52,7 @@ C++:
 - CMake 
 - Boost 
 - CGAL 
+- openmp
 
 Python:
 - check the `pyproject.toml` file for the Python package dependencies.
