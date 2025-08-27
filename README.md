@@ -53,6 +53,7 @@ C++:
 - Boost 
 - CGAL 
 - openmp
+- LASlib from LAStools
 
 Python:
 - check the `pyproject.toml` file for the Python package dependencies.

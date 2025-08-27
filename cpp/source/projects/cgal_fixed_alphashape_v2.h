@@ -24,7 +24,10 @@
 #include <CGAL/Fixed_alpha_shape_cell_base_3.h>
 
 // --- Local Dependency for PLY ---
-#include "../io_support/happly.h" // Assumes happly is available
+#include "../io_support/happly.h"
+
+// .las support
+#include "LASlib/lasreader.hpp"
 
 // An anonymous namespace is used to keep helper functions "private" to this file,
 // preventing linker errors if this header is included in multiple places.
@@ -76,6 +79,31 @@ bool _load_points(const std::filesystem::path& ptsfile, std::vector<Point>& poin
             std::cerr << "Error reading PLY file: " << e.what() << std::endl;
             return false;
         }
+    } else if (ext == ".las" || ext == ".laz") {
+        // Use LASlib to read .las or .laz files
+        // Create an opener object
+        LASreadOpener lasreadopener;
+        // Set the input filename
+        lasreadopener.set_file_name(ptsfile.c_str());
+        // Open the file and get a pointer to the LASreader
+        LASreader* lasreader = lasreadopener.open();
+        if (!lasreader) {
+            std::cerr << "Error: Could not create LASreader for " << ptsfile << std::endl;
+            return false;
+        }
+
+        points.reserve(points.size() + lasreader->npoints);
+
+        while (lasreader->read_point()) {
+            points.emplace_back(
+                lasreader->point.get_x(),
+                lasreader->point.get_y(),
+                lasreader->point.get_z()
+                );
+        }
+
+        lasreader->close();
+        delete lasreader;
     } else {
         std::cerr << "Error: Unsupported input file format: " << ext << std::endl;
         return false;
@@ -417,6 +445,8 @@ int generate_fixed_alpha_shape_only_v2(
         std::cerr << "Error: No points loaded from file." << std::endl;
         return 0;
     }
+
+    cout<<"points #: "<<points.size()<<endl;
 
     Delaunay_Fixed dt(points.begin(), points.end());
     Fixed_alpha_shape as(dt, alpha_sq);
