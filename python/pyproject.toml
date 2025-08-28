@@ -33,8 +33,15 @@ build-dir = "../build/{wheel_tag}"
 cmake.source-dir = "../cpp"
 
 # Pass an option to the CMake command to turn on the bindings
-# currently set cmake 3.5 todo update cmake
-cmake.args = ["-DBUILD_PYTHON_BINDINGS=ON", "-DCMAKE_POLICY_VERSION_MINIMUM=3.5"]
+# currently set cmake 3.5 
+# todo update cmake, deal with $CONDA_PREFIX
+cmake.args = ["-DBUILD_PYTHON_BINDINGS=ON",
+		"-DCMAKE_POLICY_VERSION_MINIMUM=3.5",
+		"-DCMAKE_BUILD_TYPE=Release",
+  		#"-DCMAKE_BUILD_WITH_INSTALL_RPATH=ON",
+  		#"-DCMAKE_INSTALL_RPATH=$ENV{CONDA_PREFIX}/lib/LASlib;$ENV{CONDA_PREFIX}/lib",
+  		#"-DCMAKE_INSTALL_RPATH_USE_LINK_PATH=ON"
+		]
 
 # Tell scikit-build where the Python source code is
 # (relative to this pyproject.toml file)

@@ -10,7 +10,7 @@ if(DEFINED ENV{CONDA_PREFIX})
     message(STATUS "Conda environment detected at: $ENV{CONDA_PREFIX}")
     # Add Conda paths to the FRONT of the search list to give them priority
     list(APPEND HEADER_SEARCH_PATHS "$ENV{CONDA_PREFIX}/include")
-    list(APPEND LIB_SEARCH_PATHS "$ENV{CONDA_PREFIX}/lib")
+    list(APPEND LIB_SEARCH_PATHS "$ENV{CONDA_PREFIX}/lib/LASlib" "$ENV{CONDA_PREFIX}/lib")
 else()
     message(STATUS "No Conda environment detected. Searching standard system paths.")
 endif()
@@ -19,6 +19,9 @@ endif()
 list(APPEND HEADER_SEARCH_PATHS "/usr/local/include" "/usr/include")
 list(APPEND LIB_SEARCH_PATHS "/usr/local/lib/LASlib" "/usr/local/lib" "/usr/lib")
 
+# show HEADER_SEARCH_PATHS, HEADER_SEARCH_PATHS
+message(STATUS "HEADER_SEARCH_PATHS: ${HEADER_SEARCH_PATHS}")
+message(STATUS "LIB_SEARCH_PATHS: ${LIB_SEARCH_PATHS}")
 
 # --- Find LASlib ---
 # Find the path to the main header file using the prioritized search paths
