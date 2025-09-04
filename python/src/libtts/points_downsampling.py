@@ -175,11 +175,13 @@ def downsample_by_lastools(infile: str, lastools_bin_dir: str, keep_random_fract
 
     base_name = os.path.splitext(os.path.basename(infile))[0]
     output_dir = os.path.dirname(infile)
-    outfile = os.path.join(output_dir, f"{base_name}_ds_{keep_random_fraction}.ply")
+    outfile = os.path.join(output_dir, f"{base_name}_ds_{keep_random_fraction}.las")
+    # todo: add option to save as .ply
 
     with tempfile.TemporaryDirectory() as temp_dir:
         temp_las_in = os.path.join(temp_dir, "temp_in.las")
         temp_las_out = os.path.join(temp_dir, "temp_out.las")
+        temp_las_out = outfile
 
         if infile.endswith('.ply'):
             _ply_to_las(infile, temp_las_in)
@@ -213,7 +215,7 @@ def downsample_by_lastools(infile: str, lastools_bin_dir: str, keep_random_fract
             print("----------------------")
             raise RuntimeError("las2las command failed.") from e
 
-        _las_to_ply(temp_las_out, outfile)
+        # _las_to_ply(temp_las_out, outfile)
 
     return outfile
 

@@ -245,12 +245,12 @@ def filter_points_by_geometry(
     
 
     # debug: save low_points for inspection
-    _should_debug = True
-    debug_dir = "/home/alex/Projects/libTTS_public/some_examples/"
-    if not os.path.exists(debug_dir):
-        _should_debug = False
-    if _should_debug:
-        np.savetxt(f"{debug_dir}/debug_low_points.pts", low_points, fmt="%.3f")
+    # _should_debug = True
+    # debug_dir = "/home/alex/Projects/libTTS_public/some_examples/"
+    # if not os.path.exists(debug_dir):
+    #     _should_debug = False
+    # if _should_debug:
+    #     np.savetxt(f"{debug_dir}/debug_low_points.pts", low_points, fmt="%.3f")
     print(f"# pts: {len(low_points)} in height slice {height_min} - {height_max}.")
 
     # 2. Find neighbors for all points at once

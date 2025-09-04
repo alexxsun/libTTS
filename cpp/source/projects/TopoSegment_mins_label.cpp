@@ -420,20 +420,27 @@ string TopoSegment::label_pts_from_mins_parallel(const bool& output) {
     }
 
     // support text .off and binary .ply
-    string outfile = _workspace + _file_name + "_lbl.pts";
-    if (_infile.find(".off") != std::string::npos) {
-        outfile = _workspace + _file_name + "_lbl.pts";
-        if (output) {
-            cout << "write: " << outfile << endl;
-            _output_pts_with_label_pts(outfile, _pts_lbls, false);
-        }
-    } else if (_infile.find(".ply") != std::string::npos) {
-        outfile = _workspace + _file_name + "_lbl.ply";
-        if (output) {
-            cout << "write: " << outfile << endl;
-            _output_pts_with_label_pts_ply(outfile, _pts_lbls, false);
-        }
+    // output in .ply format
+    string outfile = _workspace + _file_name + "_lbl.ply";
+    if (output) {
+        cout << "write: " << outfile << endl;
+        _output_pts_with_label_pts_ply(outfile, _pts_lbls, false);
     }
+
+    // string outfile = _workspace + _file_name + "_lbl.pts";
+    // if (_infile.find(".off") != std::string::npos) {
+    //     outfile = _workspace + _file_name + "_lbl.pts";
+    //     if (output) {
+    //         cout << "write: " << outfile << endl;
+    //         _output_pts_with_label_pts(outfile, _pts_lbls, false);
+    //     }
+    // } else if (_infile.find(".ply") != std::string::npos) {
+    //     outfile = _workspace + _file_name + "_lbl.ply";
+    //     if (output) {
+    //         cout << "write: " << outfile << endl;
+    //         _output_pts_with_label_pts_ply(outfile, _pts_lbls, false);
+    //     }
+    // }
 
     return outfile;
 }
