@@ -7,12 +7,13 @@
 # This module is imported here to make its functions available in the package namespace.
 from ._libtts import (generate_alpha_shape_cpp as generate_alpha_shape,
                       get_oversegments_cpp as get_oversegments,
-                      tls_extract_single_trees_cpp as tls_extract_single_trees,
+                      tls_extract_single_trees_cpp as tls_extract_single_trees, # rename: tls_extract_single_trees
                       als_segment as als_extract_single_trees)
 
 # Import any high-level Python functions or classes to expose.
 from .ground_detection import detect_ground, calculate_height_above_ground, classify_ground_and_vegetation, plot_ground_model, run_ground_detection
 from .tree_detection import filter_tree_bases, cluster_points_dbscan, run_tree_detection
+from .tree_extraction import process_single_tree, extract_trees_parallel
 from .points_downsampling import (downsample_by_lastools, downsample_object_based, 
                                   downsample_object_based_from_mesh, downsample_object_based_from_points, 
                                   run_downsampling)
@@ -33,21 +34,26 @@ __all__ = [
     "tls_extract_single_trees",
     "als_extract_single_trees",
     # Exposing the Python functions
+    ## Ground detection
     "detect_ground",
     "calculate_height_above_ground",
     "classify_ground_and_vegetation",
     "plot_ground_model",
     "run_ground_detection",
+    ## Tree detection
     "filter_tree_bases",
     "cluster_points_dbscan",
     "run_tree_detection",
-    ### Points downsampling
+    ## Tree extraction
+    process_single_tree,
+    extract_trees_parallel,
+    ## Points downsampling
     "downsample_by_lastools",
     "downsample_object_based",
     "downsample_object_based_from_mesh",
     "downsample_object_based_from_points",
     "run_downsampling",
-    ### Label propagation
+    ## Label propagation
     "label_points_layered_nn",
     "label_points_region_growing",
     "run_label_propagation",

@@ -10,17 +10,25 @@
 int alpha_shape_generation(const string& infile, const double& alpha_sq_value, string& outfile) {
     string format = "off";
 
-    if (outfile.empty()) {
-        if (infile.find(".ply") != string::npos) {
-            format = "ply";
-        }
+    if (outfile == ".ply") {
+        format = "ply";
         std::stringstream ss;
         ss << std::filesystem::path(infile).stem().string()
             << "_a" << std::fixed << std::setprecision(3) << alpha_sq_value << "." << format;
         outfile = (std::filesystem::path(infile).parent_path() / ss.str()).string();
     } else {
-        if (outfile.find(".ply") != string::npos) {
-            format = "ply";
+        if (outfile.empty()) {
+            if (infile.find(".ply") != string::npos) {
+                format = "ply";
+            }
+            std::stringstream ss;
+            ss << std::filesystem::path(infile).stem().string()
+                << "_a" << std::fixed << std::setprecision(3) << alpha_sq_value << "." << format;
+            outfile = (std::filesystem::path(infile).parent_path() / ss.str()).string();
+        } else {
+            if (outfile.find(".ply") != string::npos) {
+                format = "ply";
+            }
         }
     }
     generate_fixed_alpha_shape_only_v2(infile, alpha_sq_value, outfile, format);

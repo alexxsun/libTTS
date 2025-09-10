@@ -37,10 +37,7 @@ cmake.source-dir = "../cpp"
 # todo update cmake, deal with $CONDA_PREFIX
 cmake.args = ["-DBUILD_PYTHON_BINDINGS=ON",
 		"-DCMAKE_POLICY_VERSION_MINIMUM=3.5",
-		"-DCMAKE_BUILD_TYPE=Release",
-  		#"-DCMAKE_BUILD_WITH_INSTALL_RPATH=ON",
-  		#"-DCMAKE_INSTALL_RPATH=$ENV{CONDA_PREFIX}/lib/LASlib;$ENV{CONDA_PREFIX}/lib",
-  		#"-DCMAKE_INSTALL_RPATH_USE_LINK_PATH=ON"
+		"-DCMAKE_BUILD_TYPE=Release"
 		]
 
 # Tell scikit-build where the Python source code is

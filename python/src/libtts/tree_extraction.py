@@ -59,8 +59,8 @@ def process_single_tree(tree_id, tree_loc, clip_radius, th_alpha_sq,
             file and intermediate files will be saved.
         lastools_bin_folder (str): The file path to the 'bin' directory of your
             LAStools installation.
-        use_existing (bool, optional): If True, skips processing if the final
-            output file already exists. Defaults to False.
+        use_existing (bool, optional): If True, skips clipping process if
+            the file already exists. Defaults to False.
         save_intermediate (bool, optional): If True, intermediate files like the
             clipped AOI and the alpha shape are kept. Defaults to False.
 
@@ -86,15 +86,15 @@ def process_single_tree(tree_id, tree_loc, clip_radius, th_alpha_sq,
 
     # Define file paths using the robust os.path.join
     clipped_las_file = os.path.join(output_folder, f"tree_{tree_id}_clipped.las")
-    final_seg_file = os.path.join(output_folder, f"tree_{tree_id}_a{th_alpha_sq:.3f}.pts")
+    #final_seg_file = os.path.join(output_folder, f"tree_{tree_id}_a{th_alpha_sq:.3f}.pts")
 
-    if use_existing and os.path.exists(final_seg_file):
-        print(f"Skipping Tree ID {tree_id}: Final file already exists.")
-        return final_seg_file
+    # if use_existing and os.path.exists(final_seg_file):
+    #     print(f"Skipping Tree ID {tree_id}: Final file already exists.")
+    #     return final_seg_file
 
     # 1. Clip the tree's Area of Interest (AOI) from the main cloud
     try:
-        if not os.path.exists(clipped_las_file):
+        if not use_existing or not os.path.exists(clipped_las_file):
             cmd = (
                 f"{las2las_path} -i {entire_pts_file} -o {clipped_las_file} "
                 f"-keep_circle {tree_loc[0]} {tree_loc[1]} {clip_radius}"
@@ -113,14 +113,14 @@ def process_single_tree(tree_id, tree_loc, clip_radius, th_alpha_sq,
     # 2. Generate alpha shape and segment the tree using the C++ module
     print(f"Running C++ segmentation for Tree ID {tree_id}...")
     try:
-        as_file = _generate_alpha_shape.generate_alpha_shape(clipped_las_file, th_alpha_sq)
-        seg_file_path = _tts_tls_segment.tls_extract_single_trees(
+        as_file = _generate_alpha_shape(clipped_las_file, th_alpha_sq, ".ply") # ensure .ply extension
+        seg_file_path = _tts_tls_segment(
             as_file, entire_loc_file,
             th_p2trunk_distance=0.2,
             th_search_radius=0.25
         )
         # Rename the output to our standard format
-        shutil.move(seg_file_path, final_seg_file)
+        #shutil.move(seg_file_path, final_seg_file)
 
     except Exception as e:
         print(f"[Error] C++ segmentation failed for Tree ID {tree_id}: {e}")
@@ -133,13 +133,14 @@ def process_single_tree(tree_id, tree_loc, clip_radius, th_alpha_sq,
         if 'as_file' in locals() and os.path.exists(as_file):
             os.remove(as_file)
 
-    print(f"Successfully processed Tree ID {tree_id}. Output: {final_seg_file}")
-    return final_seg_file
+    print(f"Successfully processed Tree ID {tree_id}. Output: {seg_file_path}")
+    return seg_file_path
 
 
 def extract_trees_parallel(selected_tree_locs, entire_pts_file, entire_loc_file,
                            clip_radius, th_alpha_sq, output_folder,
-                           lastools_bin_folder, parallel_workers=2):
+                           lastools_bin_folder, parallel_workers=2,
+                           use_existing=False, save_intermediate=False):
     """Extracts multiple trees from a point cloud in parallel.
 
     Args:
@@ -165,7 +166,7 @@ def extract_trees_parallel(selected_tree_locs, entire_pts_file, entire_loc_file,
             tree_id, tree_loc, clip_radius, th_alpha_sq,
             entire_pts_file, entire_loc_file,
             output_folder, lastools_bin_folder,
-            False, False  # Corresponds to use_existing and save_intermediate
+            use_existing, save_intermediate 
         ))
 
     print(f"Created {len(tasks)} extraction tasks to process.")

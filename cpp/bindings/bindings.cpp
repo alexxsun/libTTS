@@ -12,16 +12,16 @@ namespace py = pybind11;
 
 std::string generate_alpha_shape_py(
     const std::string& infile,
-    double alpha_sq_value) {
-    std::string output_filename_from_cpp;
-    int status = alpha_shape_generation(infile, alpha_sq_value, output_filename_from_cpp);
+    double alpha_sq_value,
+    std::string& outfile) {
+    int status = alpha_shape_generation(infile, alpha_sq_value, outfile);
     // Check the status code. If it's not success (1), raise an exception.
     if (status != 1) {
         throw std::runtime_error(
             "The C++ alpha_shape_generation function failed with status code " + std::to_string(status));
     }
     // On success, return the filename that the C++ function provided.
-    return output_filename_from_cpp;
+    return outfile;
 }
 
 std::string get_oversegments_py(const string& infile) {
@@ -68,12 +68,15 @@ PYBIND11_MODULE(_libtts, m) {
                     A smaller value results in a tighter mesh with more detail and
                     potential holes. A larger value results in a more convex shape.
                     Defaults to 0.01.
+                outfile (str): The output file. Can use .ply to set the output format.
+                    Defaults to ".ply".
             
             Returns:
                 str: The path to the generated output mesh file.
             )doc",
           py::arg("infile"),
-          py::arg("alpha_sq_value") = 0.01
+          py::arg("alpha_sq_value") = 0.01,
+          py::arg("outfile") = ".ply"
         );
 
     m.def("get_oversegments_cpp",
