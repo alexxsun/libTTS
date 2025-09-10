@@ -11,6 +11,8 @@ import sys
 import time
 import shutil
 
+import numpy as np
+
 # --- Dependency Checks ---
 # Encapsulate imports in functions or check them to provide clear error messages.
 try:
@@ -37,10 +39,43 @@ except ImportError:
     CPP_MODULE_AVAILABLE = False
 
 
+def save_trees_as_ply(points, output_file):
+    """Saves a list of points to a .ply file.
+
+    Args:
+        points (list): A list of (x, y, z) tuples representing point coordinates.
+        output_file (str): The path where the .ply file will be saved.
+    """
+    vertex = [(p[0], p[1], p[2]) for p in points]
+    vertex_dtype = [('x', 'f4'), ('y', 'f4'), ('z', 'f4')]
+    vertex_array = np.array(vertex, dtype=vertex_dtype)
+    ply_element = PlyElement.describe(vertex_array, 'vertex')
+    PlyData([ply_element], text=False).write(output_file)
+    #print(f"Saved {len(points)} points to {output_file}")
+    return
+
+def get_target_tree(seg_file, tree_id):
+    """Extracts points belonging to a specific tree ID from a segmented file.
+    Args:
+        seg_file (str): Path to the segmented point cloud file. 
+        Typically expects a .ply file, with x,y,z,label columns.
+        tree_id (int or str): The tree ID to extract.
+    Returns:
+        list: A list of points belonging to the specified tree ID.
+    """
+    
+    # read the .ply file
+    plydata = PlyData.read(seg_file)
+    vertex_data = plydata['vertex'].data
+    points = [(v[0], v[1], v[2]) for v in vertex_data if v[3] == tree_id]
+    return points
+
+
 def process_single_tree(tree_id, tree_loc, clip_radius, th_alpha_sq,
                          entire_pts_file, entire_loc_file,
                          output_folder, lastools_bin_folder,
-                         use_existing=False, save_intermediate=False):
+                         use_existing=False, save_intermediate=False,
+                         output_target_tree=True):
     """Processes a single tree by clipping points around the detected location and running segmentation.
 
     Args:
@@ -121,6 +156,11 @@ def process_single_tree(tree_id, tree_loc, clip_radius, th_alpha_sq,
         )
         # Rename the output to our standard format
         #shutil.move(seg_file_path, final_seg_file)
+        if output_target_tree:
+            target_points = get_target_tree(seg_file_path, tree_id)
+            target_file = os.path.join(output_folder, f"segtree_{tree_id}.ply")
+            save_trees_as_ply(target_points, target_file)
+            print(f"Saved target tree points to {target_file}")
 
     except Exception as e:
         print(f"[Error] C++ segmentation failed for Tree ID {tree_id}: {e}")
@@ -132,6 +172,7 @@ def process_single_tree(tree_id, tree_loc, clip_radius, th_alpha_sq,
             os.remove(clipped_las_file)
         if 'as_file' in locals() and os.path.exists(as_file):
             os.remove(as_file)
+        # todo: consider removing seg_file_path if not needed?
 
     print(f"Successfully processed Tree ID {tree_id}. Output: {seg_file_path}")
     return seg_file_path
@@ -140,7 +181,8 @@ def process_single_tree(tree_id, tree_loc, clip_radius, th_alpha_sq,
 def extract_trees_parallel(selected_tree_locs, entire_pts_file, entire_loc_file,
                            clip_radius, th_alpha_sq, output_folder,
                            lastools_bin_folder, parallel_workers=2,
-                           use_existing=False, save_intermediate=False):
+                           use_existing=False, save_intermediate=False,
+                           output_target_tree=True):
     """Extracts multiple trees from a point cloud in parallel.
 
     Args:
@@ -166,7 +208,8 @@ def extract_trees_parallel(selected_tree_locs, entire_pts_file, entire_loc_file,
             tree_id, tree_loc, clip_radius, th_alpha_sq,
             entire_pts_file, entire_loc_file,
             output_folder, lastools_bin_folder,
-            use_existing, save_intermediate 
+            use_existing, save_intermediate,
+            output_target_tree 
         ))
 
     print(f"Created {len(tasks)} extraction tasks to process.")
