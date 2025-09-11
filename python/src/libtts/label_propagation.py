@@ -42,6 +42,11 @@ from scipy.spatial import KDTree
 import heapq
 from plyfile import PlyData, PlyElement
 
+try:
+    import laspy
+except ImportError:
+    print("Warning: The 'laspy' library is not installed. Run 'pip install laspy' to enable .las support.") 
+
 def label_points_layered_nn(
     points: np.ndarray,
     labeled_seed_points: np.ndarray,
@@ -135,10 +140,13 @@ def label_points_layered_nn(
     # If an output file is specified, save the labels: xyzl.pts
     if out_file is not None:
         if out_file.endswith('.ply'):
-            vertices = np.column_stack((points, propagated_labels))
-            vertex_element = PlyElement.describe(vertices, 'vertex', comments=['Labeled points'])
-            ply_data = PlyData([vertex_element])
-            ply_data.write(out_file)
+            vertices = []
+            for p,l in zip(points, propagated_labels):
+                vertices.append((p[0], p[1], p[2], l))
+            vertex_dtype = [('x', 'f4'), ('y', 'f4'), ('z', 'f4'), ('label', 'i4')]
+            vertex_array = np.array(vertices, dtype=vertex_dtype)
+            ply_element = PlyElement.describe(vertex_array, 'vertex')
+            PlyData([ply_element], text=False).write(out_file)
             print(f"Labels saved to {out_file}")
         elif out_file.endswith('.pts'):
             np.savetxt(out_file, np.column_stack((points, propagated_labels)), fmt='%.3f', delimiter=' ')
@@ -232,10 +240,13 @@ def label_points_region_growing(
     # If an output file is specified, save the labels: xyzl
     if out_file is not None:
         if out_file.endswith('.ply'):
-            vertices = np.column_stack((points, propagated_labels))
-            vertex_element = PlyElement.describe(vertices, 'vertex', comments=['Labeled points'])
-            ply_data = PlyData([vertex_element])
-            ply_data.write(out_file)
+            vertices = []
+            for p,l in zip(points, propagated_labels):
+                vertices.append((p[0], p[1], p[2], l))
+            vertex_dtype = [('x', 'f4'), ('y', 'f4'), ('z', 'f4'), ('label', 'i4')]
+            vertex_array = np.array(vertices, dtype=vertex_dtype)
+            ply_element = PlyElement.describe(vertex_array, 'vertex')
+            PlyData([ply_element], text=False).write(out_file)
             print(f"Labels saved to {out_file}")
         elif out_file.endswith('.pts'):
             np.savetxt(out_file, np.column_stack((points, propagated_labels)), fmt=['%.3f', '%.3f', '%.3f', '%d'], delimiter=' ')
@@ -280,8 +291,13 @@ def run_label_propagation(
         points = np.vstack([ply_data['vertex'][col] for col in ['x', 'y', 'z']]).T
     elif infile.endswith('.pts'):
         points = np.loadtxt(infile)
+    elif infile.endswith('.las') or infile.endswith('.laz'):
+        las = laspy.read(infile)
+        points = np.vstack((las.x, las.y, las.z)).T
     else:
         raise ValueError(f"Unsupported input file format: {infile}")
+    
+    print(f"Loaded {points.shape[0]} points from {infile}")
     
     # Load the labeled seed points
     if labeled_file.endswith('.ply'):
@@ -291,6 +307,8 @@ def run_label_propagation(
         labeled_seed_points = np.loadtxt(labeled_file)
     else:
         raise ValueError(f"Unsupported labeled seed points file format: {labeled_file}")
+    
+    print(f"Loaded {labeled_seed_points.shape[0]} labeled seed points from {labeled_file}")
     
     if method == 'region_growing':
         return label_points_region_growing(points, labeled_seed_points, **kwargs)

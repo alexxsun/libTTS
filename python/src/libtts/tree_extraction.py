@@ -13,6 +13,9 @@ import shutil
 
 import numpy as np
 
+from .points_downsampling import downsample_by_lastools
+from .label_propagation import run_label_propagation
+
 # --- Dependency Checks ---
 # Encapsulate imports in functions or check them to provide clear error messages.
 try:
@@ -22,11 +25,9 @@ except ImportError:
     print("Warning: The 'plyfile' library is not installed. Run 'pip install plyfile' to enable .ply support.")
 
 try:
-    # Used for reading .las files if a pure Python alternative to LAStools is needed.
     import laspy
 except ImportError:
-    pass # Not critical as LAStools is the primary method.
-
+    print("Warning: The 'laspy' library is not installed. Run 'pip install laspy' to enable .las support.") 
 
 # --- Optional C++ Module for Object-Based Method ---
 CPP_MODULE_AVAILABLE = True
@@ -74,6 +75,7 @@ def get_target_tree(seg_file, tree_id):
 def process_single_tree(tree_id, tree_loc, clip_radius, th_alpha_sq,
                          entire_pts_file, entire_loc_file,
                          output_folder, lastools_bin_folder,
+                         keep_random_fraction = None,
                          use_existing=False, save_intermediate=False,
                          output_target_tree=True):
     """Processes a single tree by clipping points around the detected location and running segmentation.
@@ -118,14 +120,13 @@ def process_single_tree(tree_id, tree_loc, clip_radius, th_alpha_sq,
 
     if not os.path.exists(entire_pts_file):
         raise FileNotFoundError(f"Input point cloud file not found: {entire_pts_file}")
+    
+
+    # todo: use_existing when enable, check the intermediate files for each step
+    #   skip steps if they exist
 
     # Define file paths using the robust os.path.join
     clipped_las_file = os.path.join(output_folder, f"tree_{tree_id}_clipped.las")
-    #final_seg_file = os.path.join(output_folder, f"tree_{tree_id}_a{th_alpha_sq:.3f}.pts")
-
-    # if use_existing and os.path.exists(final_seg_file):
-    #     print(f"Skipping Tree ID {tree_id}: Final file already exists.")
-    #     return final_seg_file
 
     # 1. Clip the tree's Area of Interest (AOI) from the main cloud
     try:
@@ -145,34 +146,62 @@ def process_single_tree(tree_id, tree_loc, clip_radius, th_alpha_sq,
         print(f"[Error] Clipped file was not created for Tree ID {tree_id}.")
         return None
 
+    # Optionally downsample the clipped file
+    if keep_random_fraction is not None:
+            # Downsample the clipped file if requested
+            downsampled_file = downsample_by_lastools(infile = clipped_las_file, 
+                                 lastools_bin_dir = lastools_bin_folder, keep_random_fraction = keep_random_fraction,
+                                 )
+            og_clipped_las_file = clipped_las_file
+            clipped_las_file = downsampled_file
+
     # 2. Generate alpha shape and segment the tree using the C++ module
     print(f"Running C++ segmentation for Tree ID {tree_id}...")
     try:
+        # Generate alpha shape
         as_file = _generate_alpha_shape(clipped_las_file, th_alpha_sq, ".ply") # ensure .ply extension
         seg_file_path = _tts_tls_segment(
             as_file, entire_loc_file,
             th_p2trunk_distance=0.2,
             th_search_radius=0.25
         )
-        # Rename the output to our standard format
-        #shutil.move(seg_file_path, final_seg_file)
-        if output_target_tree:
-            target_points = get_target_tree(seg_file_path, tree_id)
-            target_file = os.path.join(output_folder, f"segtree_{tree_id}.ply")
-            save_trees_as_ply(target_points, target_file)
-            print(f"Saved target tree points to {target_file}")
-
     except Exception as e:
         print(f"[Error] C++ segmentation failed for Tree ID {tree_id}: {e}")
         return None
+    
+    #  Label propagation for downsampled points
+    if keep_random_fraction is not None:
+        complete_lbl_file = os.path.join(output_folder, f"tree_{tree_id}_clipped_ds{keep_random_fraction:.2f}_a{th_alpha_sq:.3f}_lbl_comp.ply")
+        run_label_propagation(infile = og_clipped_las_file, labeled_file = seg_file_path, 
+                              method='region_growing', search_radius = 0.1, out_file=complete_lbl_file)
+        ds_seg_file = seg_file_path
+        seg_file_path = complete_lbl_file
+
+    # Optionally save the target tree points
+    if output_target_tree:
+        target_points = get_target_tree(seg_file_path, tree_id)
+        target_file = os.path.join(output_folder, f"segtree_{tree_id}.ply")
+        save_trees_as_ply(target_points, target_file)
+        print(f"Saved target tree points to {target_file}")
 
     # 3. Clean up intermediate files if requested
     if not save_intermediate:
+
         if os.path.exists(clipped_las_file):
             os.remove(clipped_las_file)
         if 'as_file' in locals() and os.path.exists(as_file):
             os.remove(as_file)
-        # todo: consider removing seg_file_path if not needed?
+
+        # todo: consider removing seg_file_path,
+        # if os.path.exists(seg_file_path):
+        #     os.remove(seg_file_path)
+        
+        
+        if keep_random_fraction is not None:
+            if os.path.exists(og_clipped_las_file):
+                os.remove(og_clipped_las_file)
+            if os.path.exists(ds_seg_file):
+                os.remove(ds_seg_file)
 
     print(f"Successfully processed Tree ID {tree_id}. Output: {seg_file_path}")
     return seg_file_path
@@ -180,7 +209,9 @@ def process_single_tree(tree_id, tree_loc, clip_radius, th_alpha_sq,
 
 def extract_trees_parallel(selected_tree_locs, entire_pts_file, entire_loc_file,
                            clip_radius, th_alpha_sq, output_folder,
-                           lastools_bin_folder, parallel_workers=2,
+                           lastools_bin_folder, 
+                           keep_random_fraction = None,
+                           parallel_workers=2,
                            use_existing=False, save_intermediate=False,
                            output_target_tree=True):
     """Extracts multiple trees from a point cloud in parallel.
@@ -208,6 +239,7 @@ def extract_trees_parallel(selected_tree_locs, entire_pts_file, entire_loc_file,
             tree_id, tree_loc, clip_radius, th_alpha_sq,
             entire_pts_file, entire_loc_file,
             output_folder, lastools_bin_folder,
+            keep_random_fraction,
             use_existing, save_intermediate,
             output_target_tree 
         ))
