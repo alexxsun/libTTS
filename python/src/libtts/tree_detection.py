@@ -287,10 +287,10 @@ def filter_points_by_geometry(
             points_to_keep_mask[i] = True
             
     # debug: save x,y,z, linearity and density values for inspection
-    linearity_values = np.array(linearity_values)
-    density_values = np.array(density_values)
-    debug_data = np.column_stack((low_points[:, :3], linearity_values, density_values))
-    np.savetxt(f"{debug_dir}/debug_geometry_values.pts", debug_data, fmt="%.3f")
+    #linearity_values = np.array(linearity_values)
+    #density_values = np.array(density_values)
+    #debug_data = np.column_stack((low_points[:, :3], linearity_values, density_values))
+    #np.savetxt(f"{debug_dir}/debug_geometry_values.pts", debug_data, fmt="%.3f")
     
     filtered_points = low_points[points_to_keep_mask]
     print(f"Filtered {len(low_points)} slice points down to {len(filtered_points)} based on geometry.")
@@ -483,7 +483,7 @@ def detect_trees_by_gridding(points_xyzh: np.ndarray, **kwargs) -> np.ndarray:
         plt.close()
         
         # show statistics of the histogram
-        hist2 = hist[hist > 50]  # remove small cells
+        hist2 = hist[hist > min_points_per_cell]  # remove small cells
         print("Histogram statistics: >50 points per cell")
         print(f"Shape: {hist2.shape}")
         print(f"Total points: {hist2.sum()}")
