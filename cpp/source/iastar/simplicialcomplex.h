@@ -26,7 +26,8 @@ protected:
     // dim id: top simplexes. Note: the dim id is not dim of simplex. see realIndex[dim] = dim_id
     vector<vector<TopSimplex> > topSimplexes;
 
-    vector<forward_list<int> > adjRelations;
+    // Complete vertex-to-top-simplex mapping: vertex → dimension → top simplex indices
+    vector<map<int, set<int>>> completeCoboundaryTop;
 
     // Vertex: x y z f1 f2 ...
     vector<Vertex> vertices;
@@ -116,8 +117,6 @@ public:
     // return: simplexes of dimension k on the coboundary of s
     vector<implicitS> *coboundaryk(const explicitS &s, uint k);
 
-    // return: simplexes adjacent to s and sharing the i-th face of s
-    vector<explicitS> *topAdjacent(const explicitS &s, uint i);
 
     // return: top-simplexes on the coboundary of s (or, in other words, incident to s)
     // NOTE: valid only for vertices (a top-simplex cannot have simplexes on their coboundary)
@@ -204,6 +203,7 @@ protected:
 
     //(given a vertex v, and a top simplex of dimension k incident in v, retrieve
     // all the k-1 connected simplexes still incident in v)
+    // Uses completeCoboundaryTop (no adjRelations needed)
     forward_list<explicitS> *incidentCluster(const explicitS v, const explicitS s);
 
     // recursive function used for computing boundary and coboundary simplexes.

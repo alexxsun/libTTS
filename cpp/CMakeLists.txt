@@ -30,6 +30,16 @@ if (BUILD_EXECUTABLE)
             libUSAGE
             libIOSUPPORT
     )
+    
+    # Build test program for Forman gradient
+    message(STATUS "Building test program 'test_forman_gradient'...")
+    add_executable(test_forman_gradient source/projects/test_forman_gradient.cpp)
+    target_link_libraries(test_forman_gradient PRIVATE
+            libFORMAN
+            libProjects
+            libUSAGE
+            libIOSUPPORT
+    )
 endif ()
 
 

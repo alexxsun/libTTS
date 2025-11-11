@@ -17,9 +17,9 @@ FormanGradient::FormanGradient(const string &infile, const int &funID) {
     cout << "file name: " << _file_name << endl;
     cout << "extension: " << _file_extension << endl;
 
-    cout << "\nReading input\n";
-    IO_Timer time;
-    time.start();
+    cout << "\n=== Reading Input ===" << endl;
+    IO_Timer total_reading_timer;
+    total_reading_timer.start();
     sc = SimplicialComplex();
 
     cout << "Entrato" << endl;
@@ -35,10 +35,12 @@ FormanGradient::FormanGradient(const string &infile, const int &funID) {
         cout << "Unknown format" << endl;
         exit(1);
     }
-    time.stop();
-    cout << "Reading time " << time.getElapsedTime() << " s" << endl;
+    total_reading_timer.stop();
+    cout << "Total reading time: " << total_reading_timer.getElapsedTime() << " s" << endl;
 
-    time.start();
+    cout << "\n=== Computing Forman Gradient ===" << endl;
+    IO_Timer forman_timer;
+    forman_timer.start();
 
     cout << "Computing fields" << endl;
     // buildFiltrations(sc);
@@ -49,7 +51,11 @@ FormanGradient::FormanGradient(const string &infile, const int &funID) {
     cout << "** Number of fields to create scalar function value: " << nField << ". **" << endl;
 
     // create gradient encoding
+    IO_Timer gradient_timer;
+    gradient_timer.start();
     gradient = GradientEncoding(sc);
+    gradient_timer.stop();
+    cout << "Gradient encoding time: " << gradient_timer.getElapsedTime() << " s" << endl;
     // final filtration
     filtration = vector<uint>(sc.getVerticesNum(), 0);
     // simulation of simplicity for each component
@@ -92,12 +98,17 @@ FormanGradient::FormanGradient(const string &infile, const int &funID) {
     sort(buildFiltration.begin(), buildFiltration.end());
 
     // filtration created
+    IO_Timer filtration_timer;
+    filtration_timer.start();
     int ind = 0;
     for (auto vec: buildFiltration) {
         filtration[vec.back()] = ind++;
     }
-    time.stop();
-    cout << "Filtration time " << time.getElapsedTime() << " s" << endl;
+    filtration_timer.stop();
+    cout << "Filtration computation time: " << filtration_timer.getElapsedTime() << " s" << endl;
+    
+    forman_timer.stop();
+    cout << "Total Forman gradient time: " << forman_timer.getElapsedTime() << " s" << endl;
 }
 
 FormanGradient::~FormanGradient() {

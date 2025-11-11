@@ -140,12 +140,18 @@ void SimplicialComplex::readPLY(const char *file) {
     realIndex.clear();
 
     IO_Timer forman_timer;
-    forman_timer.start();
+    IO_Timer total_timer, io_timer, vertex_timer, cell_timer, build_timer;
+    total_timer.start();
 
+    // File I/O: Read PLY file
+    io_timer.start();
     happly::PLYData plyIn(file);
-    // Get vertex positions
-    std::vector<std::array<double, 3> > ply_vertices = plyIn.getVertexPositions();
+    io_timer.stop();
+    cout << "   ply read file I/O: " << io_timer.getElapsedTime() << " s" << endl;
 
+    // Parse vertices
+    vertex_timer.start();
+    std::vector<std::array<double, 3> > ply_vertices = plyIn.getVertexPositions();
     vertices = vector<Vertex>(ply_vertices.size());
     for (int i = 0; i < ply_vertices.size(); i++) {
         std::array<double, 3> v = ply_vertices[i];
@@ -155,13 +161,13 @@ void SimplicialComplex::readPLY(const char *file) {
         sc_min_z = sc_min_z < v[2] ? sc_min_z : v[2];
         sc_max_z = sc_max_z > v[2] ? sc_max_z : v[2];
         // add to vertices
-        vertices[i] = Vertex({v[0], v[1], v[2], v[2]});
+        vertices[i] = Vertex({static_cast<float>(v[0]), static_cast<float>(v[1]), static_cast<float>(v[2]), static_cast<float>(v[2])});
     }
-    forman_timer.stop();
-    cout << "   ply read vertices: " << forman_timer.getElapsedTime() << " s" << endl;
+    vertex_timer.stop();
+    cout << "   ply read vertices: " << vertex_timer.getElapsedTime() << " s" << endl;
 
-    forman_timer.start();
-
+    // Parse top simplexes (cells)
+    cell_timer.start();
     std::vector<std::vector<size_t> > fInd = plyIn.getFaceIndices<size_t>();
     map<int, list<TopSimplex> *> topSimplexeslists = map<int, list<TopSimplex> *>(); // list<TopSimplex> * is a pointer
     // read top simplexes: they are cell objects in the .ply file
@@ -176,8 +182,8 @@ void SimplicialComplex::readPLY(const char *file) {
         }
         topSimplexeslists[topS.getDimension()]->push_back(topS);
     }
-    forman_timer.stop();
-    cout << "   ply read cells: " << forman_timer.getElapsedTime() << " s" << endl;
+    cell_timer.stop();
+    cout << "   ply read cells: " << cell_timer.getElapsedTime() << " s" << endl;
 
     int dim = 0;
     topSimplexes = vector<vector<TopSimplex> >(topSimplexeslists.size(), vector<TopSimplex>());
@@ -200,12 +206,22 @@ void SimplicialComplex::readPLY(const char *file) {
         num_topS += getTopSimplexesNum(v.first);
     }
 
-    forman_timer.start();
-    buildDataStructure();
-    //buildDataStructure_parallel();
+    // Build data structure (IA*)
+    build_timer.start();
+#ifdef USE_PARALLEL_BUILD
+    buildDataStructure_parallel();
     cout << "Complex built with " << vertices.size() << " vertices and top simplices:" << num_topS << endl;
-    forman_timer.stop();
-    cout << "   ply build IA*: " << forman_timer.getElapsedTime() << " s" << endl;
+    build_timer.stop();
+    cout << "   ply build IA* (parallel): " << build_timer.getElapsedTime() << " s" << endl;
+#else
+    buildDataStructure();
+    cout << "Complex built with " << vertices.size() << " vertices and top simplices:" << num_topS << endl;
+    build_timer.stop();
+    cout << "   ply build IA* (sequential): " << build_timer.getElapsedTime() << " s" << endl;
+#endif
+
+    total_timer.stop();
+    cout << "   ply total reading time: " << total_timer.getElapsedTime() << " s" << endl;
 }
 
 void SimplicialComplex::readOFF(const char *file, const int &funID) {
@@ -225,7 +241,13 @@ void SimplicialComplex::readOFF(const char *file, const int &funID) {
     sc_max_z = std::numeric_limits<double>::min();
     // simplex dim: dim id set by our code
     realIndex.clear();
+    
+    // Enhanced timing
+    IO_Timer total_timer, io_timer, vertex_timer, cell_timer, build_timer;
+    total_timer.start();
+    
     // read file
+    io_timer.start();
     ifstream fStream(file);
     if (fStream.is_open()) {
         string line;
@@ -252,7 +274,11 @@ void SimplicialComplex::readOFF(const char *file, const int &funID) {
         // read coordinates for each vertex
         int manualFieldValues = funID;
         cout << "scalar function id: " << manualFieldValues << endl;
+        io_timer.stop();
+        cout << "   off read file I/O: " << io_timer.getElapsedTime() << " s" << endl;
+        
         //
+        vertex_timer.start();
         std::map<std::vector<float>, int> off_pts; // unique point coords from off file: new id
         std::map<int, int> pts_old2new; // off file points id to unique point id
         // vertices = vector<Vertex>(nV);
@@ -315,8 +341,11 @@ void SimplicialComplex::readOFF(const char *file, const int &funID) {
                 pts_old2new[i] = off_pts[coordinates];
             }
         } // end read points in off file
+        vertex_timer.stop();
+        cout << "   off read vertices: " << vertex_timer.getElapsedTime() << " s" << endl;
 
         // dim: top simplex list. list<TopSimplex> * is a pointer
+        cell_timer.start();
         map<int, list<TopSimplex> *> topSimplexeslists = map<int, list<TopSimplex> *>();
         // read top simplexes: they are cell objects in the .off file
         int nVIndexes;
@@ -345,6 +374,8 @@ void SimplicialComplex::readOFF(const char *file, const int &funID) {
             }
             topSimplexeslists[topS.getDimension()]->push_back(topS);
         } // end read cells in off file
+        cell_timer.stop();
+        cout << "   off read cells: " << cell_timer.getElapsedTime() << " s" << endl;
         //
         int dim = 0;
         topSimplexes = vector<vector<TopSimplex> >(topSimplexeslists.size(), vector<TopSimplex>());
@@ -371,10 +402,26 @@ void SimplicialComplex::readOFF(const char *file, const int &funID) {
         num_topS += getTopSimplexesNum(v.first);
     }
 
-    buildDataStructure(); // init IA* data structure
+    // Build data structure (IA*)
+    build_timer.start();
+#ifdef USE_PARALLEL_BUILD
+    buildDataStructure_parallel();
     cout << "Complex vertices #: " << vertices.size() << endl;
     cout << " points extent: x y min: " << sc_min_x << ", " << sc_min_y << endl;
     cout << "Complex top simplices #: " << num_topS << endl;
+    build_timer.stop();
+    cout << "   off build IA* (parallel): " << build_timer.getElapsedTime() << " s" << endl;
+#else
+    buildDataStructure();
+    cout << "Complex vertices #: " << vertices.size() << endl;
+    cout << " points extent: x y min: " << sc_min_x << ", " << sc_min_y << endl;
+    cout << "Complex top simplices #: " << num_topS << endl;
+    build_timer.stop();
+    cout << "   off build IA* (sequential): " << build_timer.getElapsedTime() << " s" << endl;
+#endif
+
+    total_timer.stop();
+    cout << "   off total reading time: " << total_timer.getElapsedTime() << " s" << endl;
 }
 
 void SimplicialComplex::readTS(const char *file) {
@@ -698,18 +745,16 @@ void SimplicialComplex::readIA(char *file) {
             topSimplexes.push_back(tops);
         }
 
-        // for each non-manifold adjacent relation
+        // Note: adjRelations loading removed - no longer needed
+        // Skip the adjacency relations section in the file
         int adjRels, dim, indexes;
         fStream >> adjRels;
-        adjRelations = vector<forward_list<int> >(adjRels);
         for (int i = 0; i < adjRels; i++) {
-            forward_list<int> adj;
             fStream >> dim;
             for (int j = 0; j < dim; j++) {
                 fStream >> indexes;
-                adj.push_front(indexes);
+                // Skip reading the values - no longer needed
             }
-            adjRelations[i] = adj;
         }
 
         fStream.close();
