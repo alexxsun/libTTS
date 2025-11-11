@@ -69,9 +69,9 @@ compile_variant() {
     
     # Configure CMake
     if [ "$use_parallel" = "true" ]; then
-        cmake ../.. -DCMAKE_BUILD_TYPE=Release -DUSE_PARALLEL_BUILD=ON
+        cmake ../ -DCMAKE_BUILD_TYPE=Release -DUSE_PARALLEL_BUILD=ON
     else
-        cmake ../.. -DCMAKE_BUILD_TYPE=Release -DUSE_PARALLEL_BUILD=OFF
+        cmake ../ -DCMAKE_BUILD_TYPE=Release -DUSE_PARALLEL_BUILD=OFF
     fi
     
     # Build
