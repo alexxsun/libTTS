@@ -13,6 +13,27 @@
 #include "unistd.h"
 using namespace std;
 
+// Get current memory usage in KB (Linux-specific, reads from /proc/self/status)
+// Returns VmRSS (Resident Set Size - physical memory currently used)
+inline long getMemoryUsageKB() {
+    long memory_kb = 0;
+    ifstream status_file("/proc/self/status");
+    if (status_file.is_open()) {
+        string line;
+        while (getline(status_file, line)) {
+            if (line.find("VmRSS:") == 0) {  // Resident Set Size (physical memory)
+                istringstream iss(line);
+                string key, value, unit;
+                iss >> key >> value >> unit;
+                memory_kb = stol(value);
+                break;
+            }
+        }
+        status_file.close();
+    }
+    return memory_kb;
+}
+
 class MemoryUsage {
  private:
   int who = RUSAGE_SELF;

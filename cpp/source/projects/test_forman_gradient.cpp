@@ -8,6 +8,7 @@
 #include <string>
 #include "../forman/formangradient.h"
 #include "../iastar/Timer.h"
+#include "../iastar/Usage.h"
 
 using namespace std;
 
@@ -35,8 +36,15 @@ int main(int argc, char* argv[]) {
     IO_Timer total_timer;
     total_timer.start();
     
+    // Measure initial memory usage
+    long memory_before = getMemoryUsageKB();
+    
     // Create FormanGradient - this will internally time reading and gradient computation
     FormanGradient fg(infile, funID);
+    
+    // Measure memory usage after building data structures
+    long memory_after = getMemoryUsageKB();
+    long memory_used = memory_after - memory_before;
     
     // Get file statistics
     cout << "\n=== File Statistics ===" << endl;
@@ -56,6 +64,16 @@ int main(int argc, char* argv[]) {
     total_timer.stop();
     cout << "\n=== Total Execution Time ===" << endl;
     cout << "Total time: " << total_timer.getElapsedTime() << " s" << endl;
+    
+    cout << "\n=== Memory Usage ===" << endl;
+    cout << "Memory before: " << memory_before << " KB" << endl;
+    cout << "Memory after: " << memory_after << " KB" << endl;
+    cout << "Memory used: " << memory_used << " KB" << endl;
+    cout << "Memory used (MB): " << (memory_used / 1024.0) << " MB" << endl;
+    
+    // Output in parseable format for performance report
+    cout << "Memory usage (KB): " << memory_after << endl;
+    cout << "Memory usage (MB): " << (memory_after / 1024.0) << endl;
     
     cout << "\nTest completed successfully!" << endl;
     
