@@ -111,15 +111,33 @@ void SimplicialComplex::buildDataStructure_parallel() {
         auto st_phase = Clock::now();
         vector<unordered_set<int> > incidentTop(vertices.size());
 
-        // Parallelize building incidentTop - each top simplex can be processed independently
-#pragma omp parallel for
-        for (uint j = 0; j < simplices_count; j++) {
-            TopSimplex tS = topSimplexes[i][j];
-            for (int v = 0; v < tS.getDimension() + 1; v++) {
-                int vertexIdx = tS.getVertexIndex(v);
+        // OPTIMIZED: Use thread-local accumulation to eliminate critical section bottleneck
+        // Each thread processes top simplexes independently and accumulates results locally
+        // Then merges once per thread (minimal critical sections)
+#pragma omp parallel
+        {
+            // Each thread has its own local storage - no locking needed during accumulation
+            vector<unordered_set<int> > local_incidentTop(vertices.size());
+            
+            // Process top simplexes in parallel - no critical sections in this loop
+#pragma omp for nowait
+            for (uint j = 0; j < simplices_count; j++) {
+                TopSimplex tS = topSimplexes[i][j];
+                for (int v = 0; v < tS.getDimension() + 1; v++) {
+                    int vertexIdx = tS.getVertexIndex(v);
+                    local_incidentTop[vertexIdx].insert(j);  // No lock needed - thread-local!
+                }
+            }
+            
+            // Merge thread-local results into global incidentTop
+            // Only one critical section per thread (much less contention)
 #pragma omp critical
-                {
-                    incidentTop[vertexIdx].insert(j);
+            {
+                for (uint v = 0; v < vertices.size(); v++) {
+                    if (!local_incidentTop[v].empty()) {
+                        incidentTop[v].insert(local_incidentTop[v].begin(), 
+                                             local_incidentTop[v].end());
+                    }
                 }
             }
         }

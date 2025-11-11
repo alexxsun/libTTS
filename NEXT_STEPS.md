@@ -1,103 +1,141 @@
-# Next Steps - Performance Analysis Completion
+# Next Steps After Test Completion
 
 ## ✅ Completed
+- [x] Compiled all variants (xx_tts and test_forman_gradient)
+- [x] Ran all tests (.ply and .off files)
+- [x] Collected timing data in log files
 
-1. ✅ **Segmentation Comparison**: Files are IDENTICAL (IoU = 1.0)
-2. ✅ **Test Execution**: Tests have been run
-3. ✅ **Analysis Tools**: Scripts created for data collection
+## 📊 Current Status
+Test results directory: `cpp/cmake-build-debug/test_results_20251111_123424`
 
-## 📋 Remaining Tasks
+## 🔍 Next Steps
 
-### Step 1: Collect Detailed Timing Data
+### 1. Analyze Performance Results
 
-You need to collect timing data for each test file and variant. The enhanced timing 
-output should now be available in your test logs.
-
-**Option A: Use test_forman_gradient (Recommended)**
-
+Run the analysis script:
 ```bash
-cd cpp/cmake-build-debug
-
-# For each test file, run all 4 variants
-# (Note: You'll need to compile test_forman_gradient for each branch/variant)
-
-# From main branch (old code):
-./test_forman_gradient close_stems_3_a0.010.off 3 > close_stems_3_seq_old.log
-
-# From improve_iastar branch (new code, sequential):
-./test_forman_gradient close_stems_3_a0.010.off 3 > close_stems_3_seq_new.log
-
-# From improve_iastar branch (new code, parallel):
-# (Compile with USE_PARALLEL_BUILD=ON)
-./test_forman_gradient close_stems_3_a0.010.off 3 > close_stems_3_pa_new.log
+./analyze_results.sh
+# or specify directory:
+./analyze_results.sh cpp/cmake-build-debug/test_results_20251111_123424
 ```
 
-**Option B: Extract from existing logs**
-
-If you already have logs with the enhanced timing format, use:
+Or use the Python script directly:
 ```bash
-python3 create_performance_report.py cpp/cmake-build-debug
+python3 interpret_results.py cpp/cmake-build-debug/test_results_20251111_123424
 ```
 
-### Step 2: Fill in Performance Report
+This will show:
+- Timing comparisons (old vs new)
+- Speedup calculations
+- File statistics
 
-1. Open `PERFORMANCE_REPORT.md`
-2. Fill in the tables with data from your test results
-3. Calculate speedups: `speedup = time_old / time_new`
-4. Calculate per-vertex metrics: `time_per_vertex = (time * 1000) / num_vertices`
+### 2. Calculate Speedups
 
-### Step 3: Analyze Scalability
+From the analysis output, calculate:
+- **Build IA* speedup** = `old_time / new_time`
+- **Total reading speedup** = `old_time / new_time`
+- **Forman gradient speedup** = `old_time / new_time`
+- **Overall speedup** = `old_time / new_time`
 
-1. Plot time vs # vertices for each metric
-2. Identify scaling patterns (linear, sub-linear, super-linear)
-3. Document findings in the report
+Example:
+- Old: 4.353s → New: 0.979s = **4.45x speedup**
 
-### Step 4: Finalize Report
+### 3. Compare Segmentation Results (.ply files)
 
-1. Complete all sections
-2. Add conclusions and recommendations
-3. Document any anomalies or unexpected results
+For the .ply file tests, compare the output segmentation files:
 
-## 📊 Key Metrics to Extract
+```bash
+# Activate your Python environment
+. ~/xx_pyvenvs/treemapping_project/bin/activate.fish
 
-For each test file and variant, extract:
+# Compare old vs new segmentation
+python python/tests/cmp_ply.py \
+    cpp/cmake-build-debug/close_stems_3_a0.01_lbl.ply \
+    cpp/cmake-build-debug/close_stems_3_a0.01_lbl.ply
+```
 
-1. **File Statistics**:
-   - Number of vertices
-   - Number of top simplexes
-   - Complex dimension
+Or manually check:
+```bash
+# Check if output files exist
+ls -lh cpp/cmake-build-debug/*_lbl.ply
 
-2. **Timing Metrics**:
-   - File I/O time
-   - Read vertices time
-   - Read cells time
-   - Build IA* time (sequential or parallel)
-   - Total reading time
-   - Gradient encoding time
-   - Filtration computation time
-   - Total Forman gradient time
-   - Total execution time
+# Compare file sizes (should be similar)
+wc -l cpp/cmake-build-debug/*_lbl.ply
+```
 
-3. **Calculated Metrics**:
-   - Build time per vertex (ms)
-   - Forman time per vertex (ms)
-   - Total time per vertex (ms)
-   - Speedup vs old code
+### 4. Generate Performance Report
 
-## 🔧 Helper Scripts
+Create a summary document with:
 
-- `complete_analysis.sh` - Run complete analysis workflow
-- `create_performance_report.py` - Parse timing logs
-- `collect_timing_data.sh` - Helper for data collection
-- `generate_final_report.py` - Create report template
+1. **Test Configuration**
+   - Files tested
+   - Executables used
+   - Test date/time
 
-## 📝 Report Template
+2. **Performance Metrics**
+   - Build IA* time (old vs new)
+   - Total reading time (old vs new)
+   - Forman gradient time (old vs new)
+   - Overall execution time
 
-A report template has been created: `PERFORMANCE_REPORT.md`
+3. **Speedup Analysis**
+   - Sequential build speedup
+   - Parallel build speedup
+   - Per-file speedups
 
-Fill it in with your test results to create the final report.
+4. **Scalability Analysis**
+   - File size (vertices/top simplexes) vs time
+   - Memory usage (if available)
 
----
+5. **Segmentation Validation**
+   - IoU comparison results
+   - Output file verification
 
-**Status**: Ready for data collection and report generation
+### 5. Create Summary Table
 
+Example format:
+
+| File | Variant | Build IA* | Total Reading | Forman Gradient | Total Time | Speedup |
+|------|---------|-----------|---------------|-----------------|------------|---------|
+| close_stems_3 | seq_old | 0.047s | 0.089s | 0.014s | 0.103s | 1.0x |
+| close_stems_3 | seq_new | 0.011s | 0.046s | 0.014s | 0.061s | **1.69x** |
+| close_stems_3 | pa_old | 0.047s | 0.085s | 0.014s | 0.100s | 1.0x |
+| close_stems_3 | pa_new | 0.011s | 0.047s | 0.014s | 0.061s | **1.64x** |
+
+### 6. Document Findings
+
+Create a report document (`PERFORMANCE_ANALYSIS.md`) with:
+- Summary of improvements
+- Key findings
+- Recommendations
+- Any issues or limitations
+
+## 📝 Quick Commands
+
+```bash
+# View all log files
+find cpp/cmake-build-debug/test_results_*/ -name "*.log" | head -20
+
+# Count log files
+find cpp/cmake-build-debug/test_results_*/ -name "*.log" | wc -l
+
+# Extract all timing data
+grep -h "build IA\|Total reading\|Forman gradient" cpp/cmake-build-debug/test_results_*/off_tests/*/*.log
+
+# Compare specific metrics
+grep "build IA" cpp/cmake-build-debug/test_results_*/off_tests/close_stems_3_a0.010/*.log
+```
+
+## 🎯 Expected Outcomes
+
+1. **Performance Improvement**: New code should be faster (especially build IA*)
+2. **Correctness**: Segmentation results should be identical (IoU = 1.0)
+3. **Scalability**: Performance should scale well with file size
+
+## ⚠️ Things to Check
+
+- [ ] All log files have content
+- [ ] Timing data is consistent
+- [ ] Segmentation results match (IoU comparison)
+- [ ] No errors in log files
+- [ ] Speedups are significant (>1.5x expected)
