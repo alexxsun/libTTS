@@ -6,10 +6,32 @@
 
 #include <iostream>
 #include <string>
+#include <fstream>
+#include <sstream>
 #include "../forman/formangradient.h"
 #include "../iastar/Timer.h"
 
 using namespace std;
+
+// Function to get current memory usage in KB (Linux-specific)
+long getMemoryUsageKB() {
+    long memory_kb = 0;
+    ifstream status_file("/proc/self/status");
+    if (status_file.is_open()) {
+        string line;
+        while (getline(status_file, line)) {
+            if (line.find("VmRSS:") == 0) {  // Resident Set Size (physical memory)
+                istringstream iss(line);
+                string key, value, unit;
+                iss >> key >> value >> unit;
+                memory_kb = stol(value);
+                break;
+            }
+        }
+        status_file.close();
+    }
+    return memory_kb;
+}
 
 int main(int argc, char* argv[]) {
     if (argc < 2) {
@@ -35,8 +57,15 @@ int main(int argc, char* argv[]) {
     IO_Timer total_timer;
     total_timer.start();
     
+    // Measure initial memory usage
+    long memory_before = getMemoryUsageKB();
+    
     // Create FormanGradient - this will internally time reading and gradient computation
     FormanGradient fg(infile, funID);
+    
+    // Measure memory usage after building data structures
+    long memory_after = getMemoryUsageKB();
+    long memory_used = memory_after - memory_before;
     
     // Get file statistics
     cout << "\n=== File Statistics ===" << endl;
@@ -56,6 +85,16 @@ int main(int argc, char* argv[]) {
     total_timer.stop();
     cout << "\n=== Total Execution Time ===" << endl;
     cout << "Total time: " << total_timer.getElapsedTime() << " s" << endl;
+    
+    cout << "\n=== Memory Usage ===" << endl;
+    cout << "Memory before: " << memory_before << " KB" << endl;
+    cout << "Memory after: " << memory_after << " KB" << endl;
+    cout << "Memory used: " << memory_used << " KB" << endl;
+    cout << "Memory used (MB): " << (memory_used / 1024.0) << " MB" << endl;
+    
+    // Output in parseable format for performance report
+    cout << "Memory usage (KB): " << memory_after << endl;
+    cout << "Memory usage (MB): " << (memory_after / 1024.0) << endl;
     
     cout << "\nTest completed successfully!" << endl;
     

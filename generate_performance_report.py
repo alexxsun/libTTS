@@ -64,14 +64,16 @@ def parse_timing_log(log_file):
                 'complex_top_simplexes': r'Complex\s+top\s+simplices\s+#:\s+(\d+)',
                 'reading_time': r'Reading\s+time\s+([\d.]+)\s+s',
                 'filtration_time': r'Filtration\s+time\s+([\d.]+)\s+s',
-                'forman_gradient_computed': r'Forman\s+gradient\s+computed\s+([\d.]+)\s+s'
+                'forman_gradient_computed': r'Forman\s+gradient\s+computed\s+([\d.]+)\s+s',
+                'memory_kb': r'Memory\s+usage\s+\(KB\):\s+(\d+)',
+                'memory_mb': r'Memory\s+usage\s+\(MB\):\s+([\d.]+)'
             }
             
             for key, pattern in patterns.items():
                 match = re.search(pattern, content, re.IGNORECASE)
                 if match:
                     try:
-                        if key in ['vertices', 'top_simplexes', 'complex_vertices', 'complex_top_simplexes']:
+                        if key in ['vertices', 'top_simplexes', 'complex_vertices', 'complex_top_simplexes', 'memory_kb']:
                             data[key] = int(match.group(1))
                         else:
                             data[key] = float(match.group(1))
@@ -1008,6 +1010,155 @@ def create_parallel_vs_sequential_plot(results, output_dir):
     
     plt.close()
 
+def create_memory_usage_plot(results, output_dir):
+    """Create memory usage comparison plots."""
+    if not HAS_MATPLOTLIB:
+        print("  ⚠ Skipping plots (matplotlib not available)")
+        return
+    
+    fig, axes = plt.subplots(2, 2, figsize=(16, 12))
+    
+    off_files = [k for k in results.keys() if k != 'ply_file']
+    off_files.sort()
+    
+    x_pos = np.arange(len(off_files))
+    width = 0.35
+    
+    # Plot 1: Sequential Memory Usage (Old vs New)
+    ax1 = axes[0, 0]
+    old_memory = []
+    new_memory = []
+    for file_name in off_files:
+        old_data = results[file_name].get('test_forman_gradient_seq_old', {})
+        new_data = results[file_name].get('test_forman_gradient_seq_new', {})
+        old_mem = old_data.get('memory_mb', 0) or (old_data.get('memory_kb', 0) / 1024.0)
+        new_mem = new_data.get('memory_mb', 0) or (new_data.get('memory_kb', 0) / 1024.0)
+        old_memory.append(old_mem)
+        new_memory.append(new_mem)
+    
+    bars1 = ax1.bar(x_pos - width/2, old_memory, width, label='Old (adjRelations)', color='#d62728', alpha=0.8)
+    bars2 = ax1.bar(x_pos + width/2, new_memory, width, label='New (completeCoboundaryTop)', color='#2ca02c', alpha=0.8)
+    ax1.set_xlabel('Test Files', fontsize=11, fontweight='bold')
+    ax1.set_ylabel('Memory Usage (MB)', fontsize=11, fontweight='bold')
+    ax1.set_title('1. Memory Usage: Sequential (Old vs New)', fontsize=12, fontweight='bold')
+    ax1.set_xticks(x_pos)
+    ax1.set_xticklabels([f.replace('_', '\n') for f in off_files], rotation=0, ha='center', fontsize=8)
+    ax1.legend(fontsize=9)
+    ax1.grid(True, alpha=0.3, axis='y')
+    for bars in [bars1, bars2]:
+        for bar in bars:
+            height = bar.get_height()
+            if height > 0:
+                ax1.text(bar.get_x() + bar.get_width()/2., height, f'{height:.1f}MB',
+                        ha='center', va='bottom', fontsize=7)
+    
+    # Plot 2: Parallel Memory Usage (Old vs New)
+    ax2 = axes[0, 1]
+    old_memory = []
+    new_memory = []
+    for file_name in off_files:
+        old_data = results[file_name].get('test_forman_gradient_pa_old', {})
+        new_data = results[file_name].get('test_forman_gradient_pa_new', {})
+        old_mem = old_data.get('memory_mb', 0) or (old_data.get('memory_kb', 0) / 1024.0)
+        new_mem = new_data.get('memory_mb', 0) or (new_data.get('memory_kb', 0) / 1024.0)
+        old_memory.append(old_mem)
+        new_memory.append(new_mem)
+    
+    bars1 = ax2.bar(x_pos - width/2, old_memory, width, label='Old (adjRelations)', color='#d62728', alpha=0.8)
+    bars2 = ax2.bar(x_pos + width/2, new_memory, width, label='New (completeCoboundaryTop)', color='#2ca02c', alpha=0.8)
+    ax2.set_xlabel('Test Files', fontsize=11, fontweight='bold')
+    ax2.set_ylabel('Memory Usage (MB)', fontsize=11, fontweight='bold')
+    ax2.set_title('2. Memory Usage: Parallel (Old vs New)', fontsize=12, fontweight='bold')
+    ax2.set_xticks(x_pos)
+    ax2.set_xticklabels([f.replace('_', '\n') for f in off_files], rotation=0, ha='center', fontsize=8)
+    ax2.legend(fontsize=9)
+    ax2.grid(True, alpha=0.3, axis='y')
+    for bars in [bars1, bars2]:
+        for bar in bars:
+            height = bar.get_height()
+            if height > 0:
+                ax2.text(bar.get_x() + bar.get_width()/2., height, f'{height:.1f}MB',
+                        ha='center', va='bottom', fontsize=7)
+    
+    # Plot 3: New Code Sequential vs Parallel Memory Usage
+    ax3 = axes[1, 0]
+    seq_memory = []
+    par_memory = []
+    for file_name in off_files:
+        seq_data = results[file_name].get('test_forman_gradient_seq_new', {})
+        par_data = results[file_name].get('test_forman_gradient_pa_new', {})
+        seq_mem = seq_data.get('memory_mb', 0) or (seq_data.get('memory_kb', 0) / 1024.0)
+        par_mem = par_data.get('memory_mb', 0) or (par_data.get('memory_kb', 0) / 1024.0)
+        seq_memory.append(seq_mem)
+        par_memory.append(par_mem)
+    
+    bars1 = ax3.bar(x_pos - width/2, seq_memory, width, label='Sequential', color='#1f77b4', alpha=0.8)
+    bars2 = ax3.bar(x_pos + width/2, par_memory, width, label='Parallel', color='#ff7f0e', alpha=0.8)
+    ax3.set_xlabel('Test Files', fontsize=11, fontweight='bold')
+    ax3.set_ylabel('Memory Usage (MB)', fontsize=11, fontweight='bold')
+    ax3.set_title('3. Memory Usage: New Code (Seq vs Par)', fontsize=12, fontweight='bold')
+    ax3.set_xticks(x_pos)
+    ax3.set_xticklabels([f.replace('_', '\n') for f in off_files], rotation=0, ha='center', fontsize=8)
+    ax3.legend(fontsize=9)
+    ax3.grid(True, alpha=0.3, axis='y')
+    for bars in [bars1, bars2]:
+        for bar in bars:
+            height = bar.get_height()
+            if height > 0:
+                ax3.text(bar.get_x() + bar.get_width()/2., height, f'{height:.1f}MB',
+                        ha='center', va='bottom', fontsize=7)
+    
+    # Plot 4: Memory Usage vs Number of Vertices (Scalability)
+    ax4 = axes[1, 1]
+    vertices = []
+    old_seq_mem = []
+    new_seq_mem = []
+    old_par_mem = []
+    new_par_mem = []
+    for file_name in off_files:
+        old_seq_data = results[file_name].get('test_forman_gradient_seq_old', {})
+        new_seq_data = results[file_name].get('test_forman_gradient_seq_new', {})
+        old_par_data = results[file_name].get('test_forman_gradient_pa_old', {})
+        new_par_data = results[file_name].get('test_forman_gradient_pa_new', {})
+        
+        v = old_seq_data.get('vertices', 0) or old_seq_data.get('complex_vertices', 0)
+        old_seq_m = old_seq_data.get('memory_mb', 0) or (old_seq_data.get('memory_kb', 0) / 1024.0)
+        new_seq_m = new_seq_data.get('memory_mb', 0) or (new_seq_data.get('memory_kb', 0) / 1024.0)
+        old_par_m = old_par_data.get('memory_mb', 0) or (old_par_data.get('memory_kb', 0) / 1024.0)
+        new_par_m = new_par_data.get('memory_mb', 0) or (new_par_data.get('memory_kb', 0) / 1024.0)
+        
+        if v > 0 and (old_seq_m > 0 or new_seq_m > 0):
+            vertices.append(v)
+            old_seq_mem.append(old_seq_m)
+            new_seq_mem.append(new_seq_m)
+            old_par_mem.append(old_par_m)
+            new_par_mem.append(new_par_m)
+    
+    if vertices:
+        sorted_data = sorted(zip(vertices, old_seq_mem, new_seq_mem, old_par_mem, new_par_mem))
+        vertices, old_seq_mem, new_seq_mem, old_par_mem, new_par_mem = zip(*sorted_data)
+        
+        ax4.plot(vertices, old_seq_mem, 'o-', label='Old Seq', color='#d62728', linewidth=2, markersize=6, alpha=0.7)
+        ax4.plot(vertices, new_seq_mem, 's-', label='New Seq', color='#2ca02c', linewidth=2, markersize=6, alpha=0.7)
+        ax4.plot(vertices, old_par_mem, 'o--', label='Old Par', color='#d62728', linewidth=1.5, markersize=5, alpha=0.6)
+        ax4.plot(vertices, new_par_mem, 's--', label='New Par', color='#2ca02c', linewidth=1.5, markersize=5, alpha=0.6)
+        
+        ax4.set_xlabel('Number of Vertices', fontsize=11, fontweight='bold')
+        ax4.set_ylabel('Memory Usage (MB)', fontsize=11, fontweight='bold')
+        ax4.set_title('4. Memory Scalability', fontsize=12, fontweight='bold')
+        ax4.legend(fontsize=8, ncol=2)
+        ax4.grid(True, alpha=0.3)
+        ax4.set_xscale('log')
+        ax4.set_yscale('log')
+    
+    plt.suptitle('Memory Usage Comparison', fontsize=16, fontweight='bold', y=0.995)
+    plt.tight_layout(rect=[0, 0, 1, 0.98])
+    
+    output_file = os.path.join(output_dir, 'memory_usage_comparison.png')
+    plt.savefig(output_file, dpi=300, bbox_inches='tight')
+    print(f"  ✓ Saved: {output_file}")
+    plt.close()
+
 def generate_text_report(results, output_dir):
     """Generate text report."""
     report_file = os.path.join(output_dir, 'performance_report.txt')
@@ -1090,6 +1241,50 @@ def generate_text_report(results, output_dir):
                         elif par_val > 0:
                             f.write(f"  {metric_name:20s}: Seq N/A, Par {par_val:7.3f}s\n")
         
+        # Memory usage comparison
+        f.write("\n" + "="*80 + "\n")
+        f.write("MEMORY USAGE COMPARISON\n")
+        f.write("="*80 + "\n")
+        
+        for test_file, variants in sorted(results.items()):
+            if test_file == 'ply_file':
+                continue
+            
+            f.write(f"\n{test_file}:\n")
+            f.write("-"*80 + "\n")
+            
+            old_seq = variants.get('test_forman_gradient_seq_old', {})
+            new_seq = variants.get('test_forman_gradient_seq_new', {})
+            old_par = variants.get('test_forman_gradient_pa_old', {})
+            new_par = variants.get('test_forman_gradient_pa_new', {})
+            
+            if old_seq or new_seq or old_par or new_par:
+                f.write(f"{'Variant':<25} {'Memory (MB)':<15} {'Memory (KB)':<15}\n")
+                f.write("-"*80 + "\n")
+                
+                for variant_name, data in [('Sequential Old', old_seq), ('Sequential New', new_seq),
+                                          ('Parallel Old', old_par), ('Parallel New', new_par)]:
+                    if data:
+                        mem_mb = data.get('memory_mb', 0) or (data.get('memory_kb', 0) / 1024.0)
+                        mem_kb = data.get('memory_kb', 0) or (data.get('memory_mb', 0) * 1024.0)
+                        if mem_mb > 0:
+                            f.write(f"{variant_name:<25} {mem_mb:>12.2f} MB {mem_kb:>12.0f} KB\n")
+                
+                # Calculate memory overhead (new vs old)
+                if old_seq and new_seq:
+                    old_mem = old_seq.get('memory_mb', 0) or (old_seq.get('memory_kb', 0) / 1024.0)
+                    new_mem = new_seq.get('memory_mb', 0) or (new_seq.get('memory_kb', 0) / 1024.0)
+                    if old_mem > 0 and new_mem > 0:
+                        overhead = ((new_mem - old_mem) / old_mem) * 100
+                        f.write(f"\nSequential Memory Overhead: {overhead:+.1f}% ({new_mem - old_mem:+.2f} MB)\n")
+                
+                if old_par and new_par:
+                    old_mem = old_par.get('memory_mb', 0) or (old_par.get('memory_kb', 0) / 1024.0)
+                    new_mem = new_par.get('memory_mb', 0) or (new_par.get('memory_kb', 0) / 1024.0)
+                    if old_mem > 0 and new_mem > 0:
+                        overhead = ((new_mem - old_mem) / old_mem) * 100
+                        f.write(f"Parallel Memory Overhead: {overhead:+.1f}% ({new_mem - old_mem:+.2f} MB)\n")
+        
         f.write("\n" + "="*80 + "\n")
         f.write("CONCLUSION\n")
         f.write("="*80 + "\n")
@@ -1137,6 +1332,7 @@ def main():
         create_sequential_comparison_plot(results, output_dir)
         create_parallel_comparison_plot(results, output_dir)
         create_parallel_vs_sequential_plot(results, output_dir)
+        create_memory_usage_plot(results, output_dir)
     else:
         print("Skipping plots (matplotlib not available)")
         print("To generate plots, install matplotlib:")
@@ -1156,6 +1352,7 @@ def main():
         print("  - sequential_comparison.png (Old vs New - Sequential)")
         print("  - parallel_comparison.png (Old vs New - Parallel)")
         print("  - parallel_vs_sequential.png (New Code: Seq vs Par)")
+        print("  - memory_usage_comparison.png (Memory Usage Analysis)")
     else:
         print("\nNote: Plots not generated (matplotlib not available)")
     print("")
