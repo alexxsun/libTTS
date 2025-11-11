@@ -1,10 +1,14 @@
 #!/bin/bash
 #
-# Script to compile 4 variants of xx_tts:
+# Script to compile 4 variants of xx_tts and test_forman_gradient:
 # - xx_tts_seq_old: Old code (main branch), sequential build
 # - xx_tts_pa_old: Old code (main branch), sequential build (same as seq_old)
 # - xx_tts_seq_new: New code (improve_iastar branch), sequential build
 # - xx_tts_pa_new: New code (improve_iastar branch), parallel build
+# - test_forman_gradient_seq_old: Old code (main branch), sequential build
+# - test_forman_gradient_pa_old: Old code (main branch), sequential build (same as seq_old)
+# - test_forman_gradient_seq_new: New code (improve_iastar branch), sequential build
+# - test_forman_gradient_pa_new: New code (improve_iastar branch), parallel build
 #
 # Usage:
 #   ./compile_variants.sh [build_dir]
@@ -23,7 +27,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
 
 echo "=========================================="
-echo "Compiling 4 xx_tts Variants"
+echo "Compiling xx_tts and test_forman_gradient Variants"
 echo "=========================================="
 echo "Build directory: $BUILD_DIR"
 echo ""
@@ -54,9 +58,11 @@ fi
 compile_variant() {
     local variant_name=$1
     local use_parallel=$2
+    local target=$3  # "xx_tts" or "test_forman_gradient"
     
     echo "----------------------------------------"
     echo "Compiling: $variant_name"
+    echo "  Target: $target"
     echo "  Parallel: $use_parallel"
     echo "----------------------------------------"
     
@@ -75,15 +81,15 @@ compile_variant() {
     fi
     
     # Build
-    make xx_tts -j$(nproc) || {
+    make "$target" -j$(nproc) || {
         echo "✗ Build failed for $variant_name"
         cd "$SCRIPT_DIR"
         return 1
     }
     
     # Rename executable
-    if [ -f xx_tts ]; then
-        mv xx_tts "$variant_name"
+    if [ -f "$target" ]; then
+        mv "$target" "$variant_name"
         echo "✓ Created $variant_name"
     else
         echo "✗ Executable not found after build"
@@ -107,11 +113,17 @@ echo "Switched to main branch"
 echo ""
 
 # Old code only supports sequential (buildDataStructure() only)
-compile_variant "xx_tts_seq_old" "false"
+compile_variant "xx_tts_seq_old" "false" "xx_tts"
+compile_variant "test_forman_gradient_seq_old" "false" "test_forman_gradient"
+
 # pa_old is the same as seq_old for old code
 cp "$BUILD_DIR/xx_tts_seq_old" "$BUILD_DIR/xx_tts_pa_old" 2>/dev/null || true
+cp "$BUILD_DIR/test_forman_gradient_seq_old" "$BUILD_DIR/test_forman_gradient_pa_old" 2>/dev/null || true
 if [ -f "$BUILD_DIR/xx_tts_pa_old" ]; then
     echo "✓ Created xx_tts_pa_old (same as seq_old for old code)"
+fi
+if [ -f "$BUILD_DIR/test_forman_gradient_pa_old" ]; then
+    echo "✓ Created test_forman_gradient_pa_old (same as seq_old for old code)"
     echo ""
 fi
 
@@ -126,8 +138,10 @@ git checkout improve_iastar
 echo "Switched to improve_iastar branch"
 echo ""
 
-compile_variant "xx_tts_seq_new" "false"
-compile_variant "xx_tts_pa_new" "true"
+compile_variant "xx_tts_seq_new" "false" "xx_tts"
+compile_variant "xx_tts_pa_new" "true" "xx_tts"
+compile_variant "test_forman_gradient_seq_new" "false" "test_forman_gradient"
+compile_variant "test_forman_gradient_pa_new" "true" "test_forman_gradient"
 
 # Switch back to original branch
 git checkout "$CURRENT_BRANCH"
@@ -140,10 +154,13 @@ echo "Compilation Summary"
 echo "=========================================="
 cd "$BUILD_DIR"
 echo ""
-echo "Created executables:"
-ls -lh xx_tts_* 2>/dev/null || echo "No executables found"
+echo "Created xx_tts executables:"
+ls -lh xx_tts_* 2>/dev/null || echo "No xx_tts executables found"
 echo ""
-echo "Note: xx_tts_pa_old is the same as xx_tts_seq_old"
+echo "Created test_forman_gradient executables:"
+ls -lh test_forman_gradient_* 2>/dev/null || echo "No test_forman_gradient executables found"
+echo ""
+echo "Note: xx_tts_pa_old and test_forman_gradient_pa_old are the same as seq_old"
 echo "      (old code only supports sequential build)"
 echo ""
 echo "Done!"

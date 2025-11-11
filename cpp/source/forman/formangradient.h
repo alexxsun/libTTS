@@ -52,9 +52,9 @@ protected:
     GradientEncoding gradient;
     map<uint, SSet> criticalS; // dim: simplexes
 
-    SimplicialComplex sc;
-
 public:
+    SimplicialComplex sc;  // Made public for test programs and external access
+
     FormanGradient(const string& infile, const int& funID);
 
     ~FormanGradient();

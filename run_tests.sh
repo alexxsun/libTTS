@@ -46,6 +46,24 @@ for exe in "${EXECUTABLES[@]}"; do
         echo "  ✗ Missing $exe"
     fi
 done
+
+# Also check for test_forman_gradient variants
+echo ""
+echo "Checking test_forman_gradient executables..."
+TEST_EXECUTABLES=(
+    "test_forman_gradient_seq_old"
+    "test_forman_gradient_pa_old"
+    "test_forman_gradient_seq_new"
+    "test_forman_gradient_pa_new"
+)
+
+for test_exe in "${TEST_EXECUTABLES[@]}"; do
+    if [ -f "$TEST_DIR/$test_exe" ]; then
+        echo "  ✓ Found $test_exe"
+    else
+        echo "  ✗ Missing $test_exe"
+    fi
+done
 echo ""
 
 # Create output directory
@@ -72,12 +90,26 @@ run_test() {
         return 1
     fi
     
-    # Run test (redirect both stdout and stderr)
+    # Ensure output directory exists and convert to absolute path
+    mkdir -p "$(dirname "$output_file")"
+    local abs_output_file
+    if [[ "$output_file" = /* ]]; then
+        abs_output_file="$output_file"
+    else
+        # Convert relative path to absolute
+        abs_output_file="$(cd "$(dirname "$output_file")" && pwd)/$(basename "$output_file")"
+    fi
+    
+    # Run test (redirect both stdout and stderr using tee)
     cd "$TEST_DIR"
-    "./$exe" "$input_file" > "$output_file" 2>&1 || true
+    "./$exe" "$input_file" 2>&1 | tee "$abs_output_file" || true
     cd "$SCRIPT_DIR"
     
-    echo "  ✓ Output saved to $(basename $output_file)"
+    if [ -s "$abs_output_file" ]; then
+        echo "  ✓ Output saved to $abs_output_file ($(wc -l < "$abs_output_file") lines)"
+    else
+        echo "  ⚠ Output file is empty - executable may need different arguments"
+    fi
 }
 
 # Test .ply file (complete workflow)
@@ -90,12 +122,40 @@ if [ -f "$PLY_FILE" ]; then
     PLY_OUTPUT_DIR="$OUTPUT_DIR/ply_tests"
     mkdir -p "$PLY_OUTPUT_DIR"
     
+    # Check for trunk file (required for -tts)
+    TRUNK_FILE="$TEST_DIR/close_stems_3_locs.pts"
+    if [ ! -f "$TRUNK_FILE" ]; then
+        echo "⚠ Warning: Trunk file not found: $TRUNK_FILE"
+        echo "  xx_tts requires -tts argument with trunk file for .ply files"
+        echo "  Skipping .ply file tests or they may produce empty output"
+        echo ""
+    fi
+    
     for exe in "${EXECUTABLES[@]}"; do
         output_file="$PLY_OUTPUT_DIR/${exe}_output.log"
-        run_test "$exe" "$PLY_FILE" "$output_file"
+        # Ensure output directory exists and convert to absolute path
+        mkdir -p "$(dirname "$output_file")"
+        abs_output_file=""
+        if [[ "$output_file" = /* ]]; then
+            abs_output_file="$output_file"
+        else
+            abs_output_file="$(cd "$(dirname "$output_file")" && pwd)/$(basename "$output_file")"
+        fi
         
-        # Extract output .ply file if it exists
-        # (This depends on the actual workflow output)
+        echo "Running: $exe on $(basename $PLY_FILE)..."
+        if [ -f "$TEST_DIR/$exe" ] && [ -f "$TRUNK_FILE" ]; then
+            cd "$TEST_DIR"
+            "./$exe" "$PLY_FILE" "$TRUNK_FILE" -tts 2>&1 | tee "$abs_output_file" || true
+            cd "$SCRIPT_DIR"
+            if [ -s "$abs_output_file" ]; then
+                echo "  ✓ Output saved to $abs_output_file ($(wc -l < "$abs_output_file") lines)"
+            else
+                echo "  ⚠ Output file is empty"
+            fi
+        else
+            echo "  ⚠ Skipping (executable or trunk file not found)"
+        fi
+        echo ""
     done
     
     echo ""
@@ -132,24 +192,48 @@ for off_file in "${OFF_FILES[@]}"; do
     FILE_OUTPUT_DIR="$OFF_OUTPUT_DIR/$(basename $off_file .off)"
     mkdir -p "$FILE_OUTPUT_DIR"
     
-    # Test with test_forman_gradient if available
-    if [ -f "$TEST_DIR/test_forman_gradient" ]; then
-        echo "Using test_forman_gradient program..."
-        for exe in "${EXECUTABLES[@]}"; do
-            # For test_forman_gradient, we need to compile variants
-            # For now, just test with the main test program
-            output_file="$FILE_OUTPUT_DIR/test_forman_gradient.log"
+    # Test with test_forman_gradient variants
+    # Map xx_tts variants to test_forman_gradient variants
+    declare -A TEST_EXECUTABLES=(
+        ["xx_tts_seq_old"]="test_forman_gradient_seq_old"
+        ["xx_tts_pa_old"]="test_forman_gradient_pa_old"
+        ["xx_tts_seq_new"]="test_forman_gradient_seq_new"
+        ["xx_tts_pa_new"]="test_forman_gradient_pa_new"
+    )
+    
+    echo "Using test_forman_gradient variants..."
+    for exe in "${EXECUTABLES[@]}"; do
+        test_exe="${TEST_EXECUTABLES[$exe]}"
+        if [ -z "$test_exe" ]; then
+            echo "  ⚠ No test_forman_gradient variant for $exe, skipping"
+            continue
+        fi
+        
+        output_file="$FILE_OUTPUT_DIR/${test_exe}_output.log"
+        # Ensure output directory exists and convert to absolute path
+        mkdir -p "$(dirname "$output_file")"
+        if [[ "$output_file" = /* ]]; then
+            abs_output_file="$output_file"
+        else
+            abs_output_file="$(cd "$(dirname "$output_file")" && pwd)/$(basename "$output_file")"
+        fi
+        
+        echo "Running: $test_exe on $(basename $off_file)..."
+        if [ -f "$TEST_DIR/$test_exe" ]; then
             cd "$TEST_DIR"
-            "./test_forman_gradient" "$off_file" 3 > "$output_file" 2>&1 || true
+            "./$test_exe" "$off_file" 3 2>&1 | tee "$abs_output_file" || true
             cd "$SCRIPT_DIR"
-        done
-    else
-        echo "test_forman_gradient not found, using xx_tts executables..."
-        for exe in "${EXECUTABLES[@]}"; do
-            output_file="$FILE_OUTPUT_DIR/${exe}_output.log"
-            run_test "$exe" "$off_file" "$output_file"
-        done
-    fi
+            if [ -s "$abs_output_file" ]; then
+                echo "  ✓ Output saved to $abs_output_file ($(wc -l < "$abs_output_file") lines)"
+            else
+                echo "  ⚠ Output file is empty"
+            fi
+        else
+            echo "  ⚠ Executable not found: $test_exe"
+            echo "     Run ./compile_variants.sh to build all variants"
+        fi
+        echo ""
+    done
     echo ""
 done
 
