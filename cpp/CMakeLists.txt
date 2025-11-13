@@ -45,7 +45,7 @@ endif ()
 
 # --- Build Python Bindings (Conditionally) ---
 # This is the main switch controlled by the pyproject.toml.
-option(BUILD_PYTHON_BINDINGS "Build Python bindings" ON)
+option(BUILD_PYTHON_BINDINGS "Build Python bindings" OFF)
 
 if (BUILD_PYTHON_BINDINGS)
     #find_package(Python COMPONENTS Interpreter Development.Module REQUIRED)
