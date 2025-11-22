@@ -44,12 +44,37 @@ def save_trees_as_ply(points, output_file):
     """Saves a list of points to a .ply file.
 
     Args:
-        points (list): A list of (x, y, z) tuples representing point coordinates.
+        points (list or np.ndarray): A list of (x, y, z) tuples or numpy array of points.
         output_file (str): The path where the .ply file will be saved.
     """
-    vertex = [(p[0], p[1], p[2]) for p in points]
-    vertex_dtype = [('x', 'f4'), ('y', 'f4'), ('z', 'f4')]
-    vertex_array = np.array(vertex, dtype=vertex_dtype)
+    # Optimized: Use vectorized NumPy operations instead of list comprehension
+    if isinstance(points, np.ndarray):
+        # Already a numpy array
+        if points.ndim == 2 and points.shape[1] == 3:
+            # Shape: (N, 3) - already in correct format
+            vertex_dtype = [('x', 'f4'), ('y', 'f4'), ('z', 'f4')]
+            vertex_array = np.empty(len(points), dtype=vertex_dtype)
+            vertex_array['x'] = points[:, 0].astype('f4')
+            vertex_array['y'] = points[:, 1].astype('f4')
+            vertex_array['z'] = points[:, 2].astype('f4')
+        else:
+            # Convert to list and process
+            points = list(points)
+            vertex_dtype = [('x', 'f4'), ('y', 'f4'), ('z', 'f4')]
+            vertex_array = np.empty(len(points), dtype=vertex_dtype)
+            vertex_array['x'] = np.array([p[0] for p in points], dtype='f4')
+            vertex_array['y'] = np.array([p[1] for p in points], dtype='f4')
+            vertex_array['z'] = np.array([p[2] for p in points], dtype='f4')
+    else:
+        # List of tuples - use vectorized conversion
+        vertex_dtype = [('x', 'f4'), ('y', 'f4'), ('z', 'f4')]
+        vertex_array = np.empty(len(points), dtype=vertex_dtype)
+        # Convert to numpy array first, then assign (faster than list comprehension)
+        points_arr = np.array(points, dtype='f4')
+        vertex_array['x'] = points_arr[:, 0]
+        vertex_array['y'] = points_arr[:, 1]
+        vertex_array['z'] = points_arr[:, 2]
+    
     ply_element = PlyElement.describe(vertex_array, 'vertex')
     PlyData([ply_element], text=False).write(output_file)
     #print(f"Saved {len(points)} points to {output_file}")
@@ -62,13 +87,65 @@ def get_target_tree(seg_file, tree_id):
         Typically expects a .ply file, with x,y,z,label columns.
         tree_id (int or str): The tree ID to extract.
     Returns:
-        list: A list of points belonging to the specified tree ID.
+        np.ndarray: A NumPy array of shape (N, 3) with (x, y, z) coordinates 
+        belonging to the specified tree ID. Returns empty array if no points found.
     """
     
-    # read the .ply file
+    # Read the .ply file
     plydata = PlyData.read(seg_file)
     vertex_data = plydata['vertex'].data
-    points = [(v[0], v[1], v[2]) for v in vertex_data if v[3] == tree_id]
+    
+    # Optimized: Use NumPy vectorized operations and return NumPy array directly
+    # PlyData.read() returns a structured numpy array with named fields
+    # Convert tree_id to int for comparison
+    tree_id = int(tree_id) if isinstance(tree_id, str) else tree_id
+    
+    try:
+        # Try structured array access (most common case)
+        if hasattr(vertex_data, 'dtype') and vertex_data.dtype.names:
+            # Structured array with named fields (x, y, z, label)
+            print(f"using structured array access")
+            labels = vertex_data['label']
+            mask = labels == tree_id
+            
+            if np.any(mask):
+                # Extract x, y, z for matching points using vectorized indexing
+                x = vertex_data['x'][mask]
+                y = vertex_data['y'][mask]
+                z = vertex_data['z'][mask]
+                # Stack into (N, 3) array - much faster than list(zip())
+                points = np.column_stack([x, y, z]).astype('f4')
+            else:
+                points = np.empty((0, 3), dtype='f4')
+        else:
+            # Fallback: convert to numpy array and use positional indexing
+            print(f"using positional indexing")
+            vertex_arr = np.asarray(vertex_data)
+            if vertex_arr.ndim == 2 and vertex_arr.shape[1] >= 4:
+                # Multi-row array - columns are x, y, z, label
+                labels = vertex_arr[:, 3]
+                mask = labels == tree_id
+                if np.any(mask):
+                    # Directly extract x, y, z columns and stack - very fast
+                    points = vertex_arr[mask, :3].astype('f4')
+                else:
+                    points = np.empty((0, 3), dtype='f4')
+            else:
+                # Last resort: use original method (slow, but handles edge cases)
+                print(f"using original method")
+                point_list = [(v[0], v[1], v[2]) for v in vertex_data if len(v) > 3 and v[3] == tree_id]
+                if point_list:
+                    points = np.array(point_list, dtype='f4')
+                else:
+                    points = np.empty((0, 3), dtype='f4')
+    except (KeyError, IndexError, AttributeError):
+        # If anything fails, fall back to original method (slow, but safe)
+        point_list = [(v[0], v[1], v[2]) for v in vertex_data if len(v) > 3 and v[3] == tree_id]
+        if point_list:
+            points = np.array(point_list, dtype='f4')
+        else:
+            points = np.empty((0, 3), dtype='f4')
+    
     return points
 
 
@@ -77,7 +154,9 @@ def process_single_tree(tree_id, tree_loc, clip_radius, th_alpha_sq,
                          output_folder, lastools_bin_folder,
                          keep_random_fraction = None,
                          use_existing=False, save_intermediate=False,
-                         output_target_tree=True):
+                         output_target_tree=True,
+                         label_propagation_method='iterative_distance_based',
+                         label_propagation_kwargs=None):
     """Processes a single tree by clipping points around the detected location and running segmentation.
 
     Args:
@@ -100,6 +179,22 @@ def process_single_tree(tree_id, tree_loc, clip_radius, th_alpha_sq,
             the file already exists. Defaults to False.
         save_intermediate (bool, optional): If True, intermediate files like the
             clipped AOI and the alpha shape are kept. Defaults to False.
+        output_target_tree (bool, optional): If True, saves the target tree points
+            to a separate file. Defaults to True.
+        label_propagation_method (str, optional): The label propagation method to use. One of
+            'distance_based', 'region_growing', 'region_growing_layered', 'layered_nn', or 'iterative_distance_based'.
+            Defaults to 'iterative_distance_based' (recommended for dense point clouds with good coverage).
+            Note: 'distance_based' may have issues with label propagation - see performance analysis.
+        max_distance (float, optional): Maximum distance for distance-based method.
+            Defaults to 0.1.
+        search_radius (float, optional): Search radius for region growing methods.
+            Defaults to 0.1.
+        layer_height (float, optional): Layer height for layered methods.
+            Defaults to 0.1.
+        max_search_radius (float, optional): Maximum search radius for layered_nn method.
+            Defaults to 0.1.
+        n_jobs (int, optional): Number of parallel jobs for label propagation.
+            If None, processes sequentially. Defaults to None.
 
     Returns:
         str | None: The path to the final segmented file if successful,
@@ -121,6 +216,9 @@ def process_single_tree(tree_id, tree_loc, clip_radius, th_alpha_sq,
     if not os.path.exists(entire_pts_file):
         raise FileNotFoundError(f"Input point cloud file not found: {entire_pts_file}")
     
+    # Set default kwargs if not provided
+    if label_propagation_kwargs is None:
+        label_propagation_kwargs = {}
 
     # todo: use_existing when enable, check the intermediate files for each step
     #   skip steps if they exist
@@ -171,18 +269,38 @@ def process_single_tree(tree_id, tree_loc, clip_radius, th_alpha_sq,
     
     #  Label propagation for downsampled points
     if keep_random_fraction is not None:
-        complete_lbl_file = os.path.join(output_folder, f"tree_{tree_id}_clipped_ds{keep_random_fraction:.2f}_a{th_alpha_sq:.3f}_lbl_comp.ply")
-        run_label_propagation(infile = og_clipped_las_file, labeled_file = seg_file_path, 
-                              method='region_growing', search_radius = 0.1, out_file=complete_lbl_file)
+        # Prepare parameters for label propagation
+        # Start with the output file, then merge in user-provided kwargs
+        label_prop_kwargs = {}
+        label_prop_kwargs.update(label_propagation_kwargs)
+        
+        # Generate default output filename if not provided
+        if 'out_file' not in label_prop_kwargs:
+            complete_lbl_file = os.path.join(output_folder, f"tree_{tree_id}_clipped_ds{keep_random_fraction:.2f}_a{th_alpha_sq:.3f}_lbl_comp.ply")
+            label_prop_kwargs['out_file'] = complete_lbl_file
+        else:
+            complete_lbl_file = label_prop_kwargs['out_file']
+        
+        run_label_propagation(infile=og_clipped_las_file, labeled_file=seg_file_path, 
+                              method=label_propagation_method, **label_prop_kwargs)
         ds_seg_file = seg_file_path
         seg_file_path = complete_lbl_file
 
     # Optionally save the target tree points
     if output_target_tree:
+        import time
+        save_start_time = time.time()
         target_points = get_target_tree(seg_file_path, tree_id)
+        get_tree_time = time.time() - save_start_time
+        
         target_file = os.path.join(output_folder, f"segtree_{tree_id}.ply")
+        write_start_time = time.time()
         save_trees_as_ply(target_points, target_file)
+        write_time = time.time() - write_start_time
+        
+        total_save_time = time.time() - save_start_time
         print(f"Saved target tree points to {target_file}")
+        print(f"  Time: get_target_tree={get_tree_time:.2f}s, save_trees_as_ply={write_time:.2f}s, total={total_save_time:.2f}s")
 
     # 3. Clean up intermediate files if requested
     if not save_intermediate:
@@ -213,7 +331,9 @@ def extract_trees_parallel(selected_tree_locs, entire_pts_file, entire_loc_file,
                            keep_random_fraction = None,
                            parallel_workers=2,
                            use_existing=False, save_intermediate=False,
-                           output_target_tree=True):
+                           output_target_tree=True,
+                           label_propagation_method='distance_based',
+                           label_propagation_kwargs=None):
     """Extracts multiple trees from a point cloud in parallel.
 
     Args:
@@ -227,11 +347,33 @@ def extract_trees_parallel(selected_tree_locs, entire_pts_file, entire_loc_file,
         lastools_bin_folder (str): Path to the LAStools 'bin' directory.
         parallel_workers (int, optional): The number of parallel processes to
             use. Defaults to 2.
+        use_existing (bool, optional): If True, skips clipping process if
+            the file already exists. Defaults to False.
+        save_intermediate (bool, optional): If True, intermediate files like the
+            clipped AOI and the alpha shape are kept. Defaults to False.
+        output_target_tree (bool, optional): If True, saves the target tree points
+            to a separate file. Defaults to True.
+        label_propagation_method (str, optional): The label propagation method to use. One of
+            'distance_based', 'region_growing', 'region_growing_layered', 'layered_nn', or 'iterative_distance_based'.
+            Defaults to 'iterative_distance_based' (recommended for dense point clouds with good coverage).
+            Note: 'distance_based' may have issues with label propagation - see performance analysis.
+        label_propagation_kwargs (dict, optional): Dictionary of method-specific parameters.
+            For 'distance_based': {'max_distance': 0.1, 'n_jobs': None}
+            For 'region_growing_layered': {'search_radius': 0.1, 'layer_height': 0.1, 'n_jobs': None}
+            For 'region_growing': {'search_radius': 0.1}
+            For 'layered_nn': {'layer_height': 0.1, 'max_search_radius': 0.1}
+            For 'iterative_distance_based': {'wave_distance': 0.05, 'max_iterations': 5, 
+                'min_new_points': 10, 'multiple_label_strategy': 'hybrid', ...}
+            Defaults to None (uses method defaults).
     """
     if not os.path.exists(output_folder):
         os.makedirs(output_folder)
         print(f"Created output directory: {output_folder}")
 
+    # Set default kwargs if not provided
+    if label_propagation_kwargs is None:
+        label_propagation_kwargs = {}
+    
     # Prepare a list of argument tuples for each call to process_single_tree
     tasks = []
     for tree_id, tree_loc in selected_tree_locs.items():
@@ -241,7 +383,9 @@ def extract_trees_parallel(selected_tree_locs, entire_pts_file, entire_loc_file,
             output_folder, lastools_bin_folder,
             keep_random_fraction,
             use_existing, save_intermediate,
-            output_target_tree 
+            output_target_tree,
+            label_propagation_method,
+            label_propagation_kwargs
         ))
 
     print(f"Created {len(tasks)} extraction tasks to process.")

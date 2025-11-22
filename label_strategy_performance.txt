@@ -1,0 +1,84 @@
+Performance results.
+
+Starting Iterative Distance-Based Wave Propagation                                                                                                  
+  wave_distance: 0.05m, max_iterations: 5, min_new_points: 10, strategy: closest                                                                    
+Using 1018462 labeled seed points                                         
+Projected 1018462 seed labels onto full cloud (tolerance: 0.01m)                                                                                    
+Initialized with 1018462 labeled points from seeds                                                                                                  
+Wave 1: Labeled 8783783 new points. Total labeled: 9802245 (93.58%) | Time: 10.90s (KDTree build: 0.27s, Query: 10.15s, Strategy: 0.18s)
+Wave 2: Labeled 282720 new points. Total labeled: 10084965 (96.28%) | Time: 4.08s (KDTree build: 2.99s, Query: 0.81s, Strategy: 0.01s)
+Wave 3: Labeled 57309 new points. Total labeled: 10142274 (96.83%) | Time: 3.57s (KDTree build: 3.02s, Query: 0.32s, Strategy: 0.01s)
+Wave 4: Labeled 17934 new points. Total labeled: 10160208 (97.00%) | Time: 3.72s (KDTree build: 3.25s, Query: 0.24s, Strategy: 0.00s)
+Wave 5: Labeled 7050 new points. Total labeled: 10167258 (97.07%) | Time: 3.62s (KDTree build: 3.15s, Query: 0.24s, Strategy: 0.00s)
+Iterative Wave Propagation complete after 5 waves.                                                                                                  
+Labeled 10167258 points out of 10474470 total (97.07%)                                                                                              
+Labels saved to /gpfs/data1/vclgp/xux/projects/libTTS/some_examples/test_te_pl_output/tree_113/tree_113_a0.010_iter_closest.ply
+  Write time: prep=0.11s, write_file=0.12s, total=0.23s                                                                                             
+using structured array access                                             
+Saved target tree points to /gpfs/data1/vclgp/xux/projects/libTTS/some_examples/test_te_pl_output/tree_113/segtree_113.ply
+  Time: get_target_tree=0.22s, save_trees_as_ply=0.04s, total=0.26s  
+  
+  
+  
+Starting Iterative Distance-Based Wave Propagation                                                                                                  
+  wave_distance: 0.05m, max_iterations: 5, min_new_points: 10, strategy: majority
+Using 1018462 labeled seed points                                         
+Projected 1018462 seed labels onto full cloud (tolerance: 0.01m)                                                                                    
+Initialized with 1018462 labeled points from seeds                                                                                                  
+Wave 1: Labeled 8783783 new points. Total labeled: 9802245 (93.58%) | Time: 233.15s (KDTree build: 0.27s, Query: 10.21s, Strategy: 222.32s)
+Wave 2: Labeled 282720 new points. Total labeled: 10084965 (96.28%) | Time: 9.00s (KDTree build: 2.63s, Query: 0.78s, Strategy: 5.30s)
+Wave 3: Labeled 57309 new points. Total labeled: 10142274 (96.83%) | Time: 4.00s (KDTree build: 2.75s, Query: 0.27s, Strategy: 0.73s)
+Wave 4: Labeled 17934 new points. Total labeled: 10160208 (97.00%) | Time: 3.34s (KDTree build: 2.73s, Query: 0.21s, Strategy: 0.17s)
+Wave 5: Labeled 7050 new points. Total labeled: 10167258 (97.07%) | Time: 3.38s (KDTree build: 2.89s, Query: 0.20s, Strategy: 0.06s)
+Iterative Wave Propagation complete after 5 waves.                                                                                                  
+Labeled 10167258 points out of 10474470 total (97.07%)                                                                                              
+Labels saved to /gpfs/data1/vclgp/xux/projects/libTTS/some_examples/test_te_pl_output/tree_113/tree_113_a0.010_iter_majority_nj8.ply
+  Write time: prep=0.12s, write_file=0.14s, total=0.26s                                                                                             
+using structured array access                                             
+Saved target tree points to /gpfs/data1/vclgp/xux/projects/libTTS/some_examples/test_te_pl_output/tree_113/segtree_113.ply
+  Time: get_target_tree=0.17s, save_trees_as_ply=0.02s, total=0.19s                                                                                 
+Successfully processed Tree ID 113. Output: /gpfs/data1/vclgp/xux/projects/libTTS/some_examples/test_te_pl_output/tree_113/tree_113_a0.010_iter_majo
+rity_nj8.ply            
+
+
+
+Starting Iterative Distance-Based Wave Propagation                                                                                                  
+  wave_distance: 0.05m, max_iterations: 5, min_new_points: 10, strategy: weighted
+Using 1018462 labeled seed points                                         
+Projected 1018462 seed labels onto full cloud (tolerance: 0.01m)                                                                                    
+Initialized with 1018462 labeled points from seeds                                                                                                  
+Wave 1: Labeled 8783783 new points. Total labeled: 9802245 (93.58%) | Time: 1748.34s (KDTree build: 0.22s, Query: 8.80s, Strategy: 1738.98s)
+Wave 2: Labeled 282720 new points. Total labeled: 10084965 (96.28%) | Time: 80.65s (KDTree build: 2.66s, Query: 0.79s, Strategy: 76.91s)
+Wave 3: Labeled 57309 new points. Total labeled: 10142274 (96.83%) | Time: 33.39s (KDTree build: 2.73s, Query: 0.27s, Strategy: 30.12s)
+Wave 4: Labeled 17934 new points. Total labeled: 10160208 (97.00%) | Time: 24.79s (KDTree build: 2.70s, Query: 0.21s, Strategy: 21.62s)
+Wave 5: Labeled 7050 new points. Total labeled: 10167258 (97.07%) | Time: 22.29s (KDTree build: 2.74s, Query: 0.20s, Strategy: 19.07s)
+Iterative Wave Propagation complete after 5 waves.                                                                                                  
+Labeled 10167258 points out of 10474470 total (97.07%)                                                                                              
+Labels saved to /gpfs/data1/vclgp/xux/projects/libTTS/some_examples/test_te_pl_output/tree_113/tree_113_a0.010_iter_weighted.ply
+  Write time: prep=0.12s, write_file=0.07s, total=0.19s                                                                                             
+using structured array access                                             
+Saved target tree points to /gpfs/data1/vclgp/xux/projects/libTTS/some_examples/test_te_pl_output/tree_113/segtree_113.ply
+  Time: get_target_tree=0.15s, save_trees_as_ply=0.01s, total=0.16s                                                                                 
+Successfully processed Tree ID 113. Output: /gpfs/data1/vclgp/xux/projects/libTTS/some_examples/test_te_pl_output/tree_113/tree_113_a0.010_iter_weig
+hted.ply                             
+
+
+Starting Iterative Distance-Based Wave Propagation                                                                                                  
+  wave_distance: 0.05m, max_iterations: 5, min_new_points: 10, strategy: hybrid                                                                     
+Using 1018462 labeled seed points                                         
+Projected 1018462 seed labels onto full cloud (tolerance: 0.01m)                                                                                    
+Initialized with 1018462 labeled points from seeds                                                                                                  
+Wave 1: Labeled 8783783 new points. Total labeled: 9802245 (93.58%) | Time: 593.58s (KDTree build: 0.23s, Query: 8.81s, Strategy: 584.22s)
+Wave 2: Labeled 282720 new points. Total labeled: 10084965 (96.28%) | Time: 25.15s (KDTree build: 2.67s, Query: 0.83s, Strategy: 21.35s)
+Wave 3: Labeled 57309 new points. Total labeled: 10142274 (96.83%) | Time: 9.42s (KDTree build: 2.73s, Query: 0.29s, Strategy: 6.13s)
+Wave 4: Labeled 17934 new points. Total labeled: 10160208 (97.00%) | Time: 6.63s (KDTree build: 2.72s, Query: 0.22s, Strategy: 3.46s)
+Wave 5: Labeled 7050 new points. Total labeled: 10167258 (97.07%) | Time: 5.84s (KDTree build: 2.76s, Query: 0.19s, Strategy: 2.67s)
+Iterative Wave Propagation complete after 5 waves.                                                                                                  
+Labeled 10167258 points out of 10474470 total (97.07%)                                                                                              
+Labels saved to /gpfs/data1/vclgp/xux/projects/libTTS/some_examples/test_te_pl_output/tree_113/tree_113_a0.010_iter_hybrid.ply
+  Write time: prep=0.15s, write_file=0.07s, total=0.23s                                                                                             
+using structured array access                                             
+Saved target tree points to /gpfs/data1/vclgp/xux/projects/libTTS/some_examples/test_te_pl_output/tree_113/segtree_113.ply
+  Time: get_target_tree=0.15s, save_trees_as_ply=0.01s, total=0.17s                                                                                 
+Successfully processed Tree ID 113. Output: /gpfs/data1/vclgp/xux/projects/libTTS/some_examples/test_te_pl_output/tree_113/tree_113_a0.010_iter_hybr
+id.ply                               
